@@ -91,7 +91,6 @@ public final class BioSet extends PObject implements NonInteractive
 	 * Builds a string describing the bio settings for the specified race (for no Region)
 	 * This string is formatted so that it can be read in by BioSetLoader
 	 *
-	 * @param region The region of the race to be output
 	 * @param race   The name of the race to be output
 	 * @return String A lst string describing the region's biosets.
 	 */
@@ -203,11 +202,10 @@ public final class BioSet extends PObject implements NonInteractive
 	@Override
 	public String toString()
 	{
-		final StringBuilder sb = new StringBuilder(100);
-		sb.append("AgeMap: ").append(ageMap).append("\n");
-		sb.append("UserMap: ").append(userMap).append("\n");
 
-		return sb.toString();
+		String sb = "AgeMap: " + ageMap + "\n"
+				+ "UserMap: " + userMap + "\n";
+		return sb;
 	}
 
 	private static String replaceString(final String argInput, final String replacement, final int value)

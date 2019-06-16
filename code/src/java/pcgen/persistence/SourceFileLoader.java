@@ -532,7 +532,6 @@ public class SourceFileLoader extends PCGenTask implements Observer
 		//			return;
 		//		}
 		File gameModeDir = new File(ConfigurationSettings.getSystemsDir(), "gameModes");
-		File specificGameModeDir = new File(gameModeDir, gamemode.getFolderName());
 
 		// Sort the campaigns
 		sortCampaignsByRank(aSelectedCampaignsList);
@@ -904,7 +903,7 @@ public class SourceFileLoader extends PCGenTask implements Observer
 	 */
 	public static void sortCampaignsByRank(final List<Campaign> aSelectedCampaignsList)
 	{
-		aSelectedCampaignsList.sort(new Comparator<Campaign>()
+		aSelectedCampaignsList.sort(new Comparator<>()
 		{
 
 			@Override
@@ -1170,7 +1169,7 @@ public class SourceFileLoader extends PCGenTask implements Observer
 		}
 
 		@Override
-		public void close() throws SecurityException
+		public void close()
 		{
 			// Nothing to do
 		}

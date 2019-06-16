@@ -77,6 +77,7 @@ import pcgen.gui2.util.treeview.DefaultDataViewColumn;
 import pcgen.gui2.util.treeview.TreeView;
 import pcgen.gui2.util.treeview.TreeViewModel;
 import pcgen.gui2.util.treeview.TreeViewPath;
+import pcgen.gui3.utilty.ColorUtilty;
 import pcgen.system.FacadeFactory;
 import pcgen.system.LanguageBundle;
 import pcgen.util.Comparators;
@@ -135,8 +136,8 @@ class AdvancedSourceSelectionPanel extends JPanel
 
 	private void initComponents()
 	{
-		FlippingSplitPane mainPane = new FlippingSplitPane(JSplitPane.VERTICAL_SPLIT, "advSrcMain");
-		FlippingSplitPane topPane = new FlippingSplitPane("advSrcTop");
+		FlippingSplitPane mainPane = new FlippingSplitPane(JSplitPane.VERTICAL_SPLIT);
+		FlippingSplitPane topPane = new FlippingSplitPane();
 		topPane.setResizeWeight(0.6);
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.add(new JLabel(LanguageBundle.getString("in_src_gameLabel")), BorderLayout.WEST); //$NON-NLS-1$
@@ -646,16 +647,16 @@ class AdvancedSourceSelectionPanel extends JPanel
 					if (format != null && setting != null)
 					{
 						return Collections
-							.singletonList(new TreeViewPath<Campaign>(pobj, publisher, format, setting));
+							.singletonList(new TreeViewPath<>(pobj, publisher, format, setting));
 					}
 					if (format != null)
 					{
-						return Collections.singletonList(new TreeViewPath<Campaign>(pobj, publisher, format));
+						return Collections.singletonList(new TreeViewPath<>(pobj, publisher, format));
 					}
 				case PUBLISHER_SETTING_NAME:
 					if (setting != null)
 					{
-						return Collections.singletonList(new TreeViewPath<Campaign>(pobj, publisher, setting));
+						return Collections.singletonList(new TreeViewPath<>(pobj, publisher, setting));
 					}
 				case PUBLISHER_NAME:
 					return Collections.singletonList(new TreeViewPath<>(pobj, publisher));
@@ -679,7 +680,7 @@ class AdvancedSourceSelectionPanel extends JPanel
 		 */
 		public CampaignRenderer()
 		{
-			setTextNonSelectionColor(UIPropertyContext.getQualifiedColor());
+			setTextNonSelectionColor(ColorUtilty.colorToAWTColor(UIPropertyContext.getQualifiedColor()));
 		}
 
 		@Override
@@ -696,7 +697,7 @@ class AdvancedSourceSelectionPanel extends JPanel
 				testCampaigns.add(campaign);
 				if (!FacadeFactory.passesPrereqs(testCampaigns))
 				{
-					setForeground(UIPropertyContext.getNotQualifiedColor());
+					setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor()));
 				}
 			}
 			return this;

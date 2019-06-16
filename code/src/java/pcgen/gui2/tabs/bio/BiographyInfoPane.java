@@ -49,7 +49,6 @@ import pcgen.gui2.tabs.TabTitle;
 import pcgen.gui2.tabs.models.CharacterComboBoxModel;
 import pcgen.gui2.tabs.models.FormattedFieldHandler;
 import pcgen.gui2.tabs.models.TextFieldHandler;
-import pcgen.gui2.util.ScrollablePanel;
 import pcgen.system.LanguageBundle;
 
 /**
@@ -80,7 +79,7 @@ public class BiographyInfoPane extends JPanel implements CharacterInfoTab
 	{
 		this.allButton = new JButton();
 		this.noneButton = new JButton();
-		this.itemsPanel = new ScrollablePanel(20);
+		this.itemsPanel = new JPanel();
 		initComponents();
 	}
 
@@ -277,7 +276,7 @@ public class BiographyInfoPane extends JPanel implements CharacterInfoTab
 		public GenderItem(final CharacterFacade character)
 		{
 			super("in_gender", BiographyField.GENDER, character); //$NON-NLS-1$
-			genderModel = new CharacterComboBoxModel<Gender>()
+			genderModel = new CharacterComboBoxModel<>()
 			{
 
 				@Override
@@ -309,7 +308,7 @@ public class BiographyInfoPane extends JPanel implements CharacterInfoTab
 		public HandedItem(final CharacterFacade character)
 		{
 			super("in_handString", BiographyField.HANDED, character); //$NON-NLS-1$
-			handsModel = new CharacterComboBoxModel<Handed>()
+			handsModel = new CharacterComboBoxModel<>()
 			{
 
 				@Override
@@ -339,7 +338,7 @@ public class BiographyInfoPane extends JPanel implements CharacterInfoTab
 		public AlignmentItem(final CharacterFacade character)
 		{
 			super("in_alignString", BiographyField.ALIGNMENT, character); //$NON-NLS-1$
-			CharacterComboBoxModel<PCAlignment> alignmentModel = new CharacterComboBoxModel<PCAlignment>()
+			CharacterComboBoxModel<PCAlignment> alignmentModel = new CharacterComboBoxModel<>()
 			{
 
 				@Override
@@ -362,7 +361,7 @@ public class BiographyInfoPane extends JPanel implements CharacterInfoTab
 		public DeityItem(final CharacterFacade character)
 		{
 			super("in_deity", BiographyField.DEITY, character); //$NON-NLS-1$
-			CharacterComboBoxModel<Deity> deityModel = new CharacterComboBoxModel<Deity>()
+			CharacterComboBoxModel<Deity> deityModel = new CharacterComboBoxModel<>()
 			{
 
 				@Override
@@ -385,7 +384,7 @@ public class BiographyInfoPane extends JPanel implements CharacterInfoTab
 		public AgeItem(final CharacterFacade character)
 		{
 			super("in_age", BiographyField.AGE, character); //$NON-NLS-1$
-			CharacterComboBoxModel<String> ageModel = new CharacterComboBoxModel<String>()
+			CharacterComboBoxModel<String> ageModel = new CharacterComboBoxModel<>()
 			{
 
 				@Override

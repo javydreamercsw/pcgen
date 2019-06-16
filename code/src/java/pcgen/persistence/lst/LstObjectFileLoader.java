@@ -288,11 +288,11 @@ public abstract class LstObjectFileLoader<T extends CDOMObject> extends Observab
 		{
 			String message = LanguageBundle.getFormattedString("Errors.LstFileLoader.LoadError", //$NON-NLS-1$
 				uri, ple.getMessage());
-			Logging.errorPrint(message);
+			Logging.errorPrint(message, ple);
 			setChanged();
 			return;
 		}
-		String aString = dataBuffer;
+		String aString = Objects.requireNonNull(dataBuffer);
 		if (context != null)
 		{
 			context.setSourceURI(uri);
@@ -398,7 +398,6 @@ public abstract class LstObjectFileLoader<T extends CDOMObject> extends Observab
 					if (Logging.isDebugMode())
 					{
 						Logging.errorPrint(LanguageBundle.getString("Errors.LstFileLoader.Ignoring"), t);
-						t.printStackTrace();
 					}
 				}
 			}
@@ -668,7 +667,7 @@ public abstract class LstObjectFileLoader<T extends CDOMObject> extends Observab
 	 * This class is an entry mapping a mod to its source.
 	 * Once created, instances of this class are immutable.
 	 */
-	public static class ModEntry
+	public static final class ModEntry
 	{
 		private CampaignSourceEntry source = null;
 		private String lstLine = null;

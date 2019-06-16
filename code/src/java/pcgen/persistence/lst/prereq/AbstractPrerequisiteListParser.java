@@ -161,7 +161,7 @@ public abstract class AbstractPrerequisiteListParser extends AbstractPrerequisit
 		}
 		catch (NumberFormatException nfe)
 		{
-			throw new PersistenceLayerException("'" + elements[0] + "' is not a valid integer");
+			throw new PersistenceLayerException("'" + elements[0] + "' is not a valid integer", nfe);
 		}
 
 		// Examine the last element to see if it is of the form "foo=n"
@@ -333,7 +333,7 @@ public abstract class AbstractPrerequisiteListParser extends AbstractPrerequisit
 								else
 								{
 									throw new PersistenceLayerException(
-										"Prerequisites of kind " + kind + " do not support 'ANY'");
+										"Prerequisites of kind " + kind + " do not support 'ANY'", nfe);
 								}
 							}
 							else
@@ -384,8 +384,7 @@ public abstract class AbstractPrerequisiteListParser extends AbstractPrerequisit
 		}
 		else
 		{
-			List<String> parts = new ArrayList<>();
-			parts.addAll(Arrays.asList(tokens));
+			List<String> parts = new ArrayList<>(Arrays.asList(tokens));
 			parts.remove(parts.size() - 1);
 			reqKey = StringUtils.join(parts, "=");
 		}

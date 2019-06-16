@@ -340,7 +340,7 @@ public final class PCGIOHandler extends IOHandler
 			double baseFeatPool = parser.getBaseFeatPool();
 			double featPoolBonus = currentPC.getRemainingFeatPoints(true);
 			baseFeatPool -= featPoolBonus;
-			currentPC.setUserPoolBonus(AbilityCategory.FEAT, new BigDecimal(baseFeatPool));
+			currentPC.setUserPoolBonus(AbilityCategory.FEAT, new BigDecimal(String.valueOf(baseFeatPool)));
 		}
 
 		for (CNAbility aFeat : currentPC.getPoolAbilities(AbilityCategory.FEAT, Nature.NORMAL))
@@ -504,7 +504,8 @@ public final class PCGIOHandler extends IOHandler
 	 * @param partyFile a .pcp party file
 	 * @return a list of files containing the characters in this party
 	 */
-	public List<File> readCharacterFileList(File partyFile)
+	@SuppressWarnings("PMD.UnusedLocalVariable")
+	public static List<File> readCharacterFileList(File partyFile)
 	{
 		List<String> lines;
 		try (BufferedReader bufferedReader = new BufferedReader(new FileReader(partyFile, StandardCharsets.UTF_8)))

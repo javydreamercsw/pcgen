@@ -31,9 +31,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -44,7 +46,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -56,8 +57,6 @@ import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import pcgen.cdom.base.Constants;
 import pcgen.core.Globals;
@@ -75,6 +74,9 @@ import pcgen.system.ConfigurationSettings;
 import pcgen.system.PCGenSettings;
 import pcgen.util.Logging;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.stage.FileChooser;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang3.BooleanUtils;
@@ -85,7 +87,6 @@ import org.apache.commons.lang3.SystemUtils;
  * The dialog provides the list of output sheets for a character or party to
  * be exported to.
  */
-@SuppressWarnings("serial")
 public final class ExportDialog extends JDialog implements ActionListener, ListSelectionListener
 {
 
@@ -99,7 +100,7 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 	public static void showExportDialog(PCGenFrame parent)
 	{
 		Window dialog = new ExportDialog(parent);
-		Utility.setComponentRelativeLocation(parent, dialog);
+		dialog.setLocationRelativeTo(parent);
 		dialog.setVisible(true);
 	}
 
@@ -112,7 +113,6 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 	private final JProgressBar progressBar;
 	private final JButton exportButton;
 	private final JButton closeButton;
-	private final FileSearcher fileSearcher;
 	private Collection<File> allTemplates = null;
 
 	private ExportDialog(PCGenFrame parent)
@@ -128,10 +128,11 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 		this.progressBar = new JProgressBar();
 		this.exportButton = new JButton("Export");
 		this.closeButton = new JButton("Close");
-		this.fileSearcher = new FileSearcher();
 		initComponents();
 		initLayout();
-		fileSearcher.execute();
+		setWorking(false);
+		allTemplates = getAllTemplates();
+		refreshFiles();
 
 		Utility.installEscapeCloseOperation(this);
 	}
@@ -140,7 +141,6 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 	public void dispose()
 	{
 		super.dispose();
-		fileSearcher.cancel(false);
 		characterBoxModel.setReference(null);
 		characterBoxModel.setListFacade(null);
 	}
@@ -179,8 +179,6 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 
 		exportButton.setEnabled(false);
 		progressBar.setStringPainted(true);
-		progressBar.setString("Loading Templates");
-		progressBar.setIndeterminate(true);
 
 		setTitle("Export a PC or Party");
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -268,7 +266,7 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 
 	private void doExport()
 	{
-		export(SheetFilter.PDF == exportBox.getSelectedItem());
+		export(exportBox.getSelectedItem() == SheetFilter.PDF);
 	}
 
 	private void setWorking(boolean working)
@@ -282,8 +280,8 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 	private void export(boolean pdf)
 	{
 		UIPropertyContext context = UIPropertyContext.createContext("ExportDialog");
-		final JFileChooser fcExport = new JFileChooser();
-		fcExport.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		FileChooser fileChooser = new FileChooser();
+
 		File baseDir = null;
 		{
 			String path;
@@ -304,33 +302,31 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 		{
 			baseDir = SystemUtils.getUserHome();
 		}
-		fcExport.setCurrentDirectory(baseDir);
+		fileChooser.setInitialDirectory(baseDir);
+
 
 		URI uri = fileList.getSelectedValue();
 		String extension = ExportUtilities.getOutputExtension(uri.toString(), pdf);
+		FileChooser.ExtensionFilter fileFilter;
 		if (pdf)
 		{
-			FileFilter fileFilter = new FileNameExtensionFilter("PDF Documents (*.pdf)", "pdf");
-			fcExport.addChoosableFileFilter(fileFilter);
-			fcExport.setFileFilter(fileFilter);
+			fileFilter = new FileChooser.ExtensionFilter("PDF Documents", "*.pdf");
 		}
 		else if ("htm".equalsIgnoreCase(extension) || "html".equalsIgnoreCase(extension))
 		{
-			FileFilter fileFilter = new FileNameExtensionFilter("HTML Documents (*.htm, *.html)", "htm", "html");
-			fcExport.addChoosableFileFilter(fileFilter);
-			fcExport.setFileFilter(fileFilter);
+			fileFilter = new FileChooser.ExtensionFilter("HTML Documents", "*.html", "*.htm");
 		}
 		else if ("xml".equalsIgnoreCase(extension))
 		{
-			FileFilter fileFilter = new FileNameExtensionFilter("XML Documents (*.xml)", "xml");
-			fcExport.addChoosableFileFilter(fileFilter);
-			fcExport.setFileFilter(fileFilter);
+			fileFilter = new FileChooser.ExtensionFilter("XML Documents", "*.xml");
 		}
 		else
 		{
 			String desc = extension + " Files (*." + extension + ")";
-			fcExport.addChoosableFileFilter(new FileNameExtensionFilter(desc, extension));
+			fileFilter = new FileChooser.ExtensionFilter(desc, "*." + extension);
 		}
+		fileChooser.getExtensionFilters().add(fileFilter);
+		fileChooser.setSelectedExtensionFilter(fileFilter);
 		String name;
 		File path;
 		if (!partyBox.isSelected())
@@ -356,21 +352,15 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 			path = new File(PCGenSettings.getPcgDir());
 			name = "Entire Party";
 		}
-		if (pdf)
-		{
-			fcExport.setSelectedFile(new File(path, name + ".pdf"));
-		}
-		else
-		{
-			fcExport.setSelectedFile(new File(path, name + "." + extension));
-		}
-		fcExport.setDialogTitle("Export " + name);
-		if (fcExport.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
+
+		fileChooser.setTitle("Export " + name);
+
+		final File outFile = fileChooser.showSaveDialog(null);
+		if (outFile == null)
 		{
 			return;
 		}
 
-		final File outFile = fcExport.getSelectedFile();
 		if (pdf)
 		{
 			context.setProperty(PDF_EXPORT_DIR_PROP, outFile.getParent());
@@ -380,32 +370,20 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 			context.setProperty(HTML_EXPORT_DIR_PROP, outFile.getParent());
 		}
 
-		if (StringUtils.isEmpty(outFile.getName()))
-		{
-			pcgenFrame.showErrorMessage("PCGen", "You must set a filename.");
-			return;
-		}
-
-		if (outFile.isDirectory())
-		{
-			pcgenFrame.showErrorMessage("PCGen", "You cannot overwrite a directory with a file.");
-			return;
-		}
-
 		if (outFile.exists() && !SettingsHandler.getAlwaysOverwrite())
 		{
-			int reallyClose = JOptionPane.showConfirmDialog(this,
-				"The file " + outFile.getName() + " already exists, are you sure you want to overwrite it?",
-				"Confirm overwriting " + outFile.getName(), JOptionPane.YES_NO_OPTION);
-
-			if (reallyClose != JOptionPane.YES_OPTION)
+			Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+			alert.setTitle("Confirm overwriting " + outFile.getName());
+			alert.setContentText("The file " + outFile.getName() + " already exists, are you sure you want to overwrite it?");
+			Optional<ButtonType> buttonType = alert.showAndWait();
+			if (!buttonType.orElse(ButtonType.NO).equals(ButtonType.YES))
 			{
 				return;
 			}
 		}
 		if (pdf)
 		{
-			new PDFExporter(outFile, extension, name).execute();
+			new PDFExporter(outFile, name).execute();
 		}
 		else
 		{
@@ -502,65 +480,59 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 
 	private void refreshFiles()
 	{
-		if (allTemplates != null)
+		String outputSheetsDir;
+		SheetFilter sheetFilter = (SheetFilter) exportBox.getSelectedItem();
+		IOFileFilter ioFilter = FileFilterUtils.asFileFilter(sheetFilter);
+		IOFileFilter prefixFilter;
+		String defaultSheet = null;
+		String outputSheetDirectory = SettingsHandler.getGame().getOutputSheetDirectory();
+		if (outputSheetDirectory == null)
 		{
-			String outputSheetsDir;
-			SheetFilter sheetFilter = (SheetFilter) exportBox.getSelectedItem();
-			IOFileFilter ioFilter = FileFilterUtils.asFileFilter(sheetFilter);
-			IOFileFilter prefixFilter;
-			String defaultSheet = null;
-			String outputSheetDirectory = SettingsHandler.getGame().getOutputSheetDirectory();
-			if (outputSheetDirectory == null)
-			{
-				outputSheetsDir = ConfigurationSettings.getOutputSheetsDir() + "/" + sheetFilter.getPath();
-			}
-			else
-			{
-				outputSheetsDir = ConfigurationSettings.getOutputSheetsDir() + "/" + outputSheetDirectory + "/"
-					+ sheetFilter.getPath();
-			}
+			outputSheetsDir = ConfigurationSettings.getOutputSheetsDir() + "/" + sheetFilter.getPath();
+		}
+		else
+		{
+			outputSheetsDir = ConfigurationSettings.getOutputSheetsDir() + "/" + outputSheetDirectory + "/"
+				+ sheetFilter.getPath();
+		}
 
-			if (partyBox.isSelected())
+		if (partyBox.isSelected())
+		{
+			prefixFilter = FileFilterUtils.prefixFileFilter(Constants.PARTY_TEMPLATE_PREFIX);
+		}
+		else
+		{
+			CharacterFacade character = (CharacterFacade) characterBox.getSelectedItem();
+			prefixFilter = FileFilterUtils.prefixFileFilter(Constants.CHARACTER_TEMPLATE_PREFIX);
+			defaultSheet = character.getDefaultOutputSheet(sheetFilter == SheetFilter.PDF);
+			if (StringUtils.isEmpty(defaultSheet))
 			{
-				prefixFilter = FileFilterUtils.prefixFileFilter(Constants.PARTY_TEMPLATE_PREFIX);
+				defaultSheet = outputSheetsDir + "/"
+					+ SettingsHandler.getGame().getOutputSheetDefault(sheetFilter.getTag());
 			}
-			else
-			{
-				CharacterFacade character = (CharacterFacade) characterBox.getSelectedItem();
-				prefixFilter = FileFilterUtils.prefixFileFilter(Constants.CHARACTER_TEMPLATE_PREFIX);
-				defaultSheet = character.getDefaultOutputSheet(sheetFilter == SheetFilter.PDF);
-				if (StringUtils.isEmpty(defaultSheet))
-				{
-					defaultSheet = outputSheetsDir + "/"
-						+ SettingsHandler.getGame().getOutputSheetDefault(sheetFilter.getTag());
-				}
-			}
-			IOFileFilter filter = FileFilterUtils.and(prefixFilter, ioFilter);
-			List<File> files = FileFilterUtils.filterList(filter, allTemplates);
-			Collections.sort(files);
+		}
+		IOFileFilter filter = FileFilterUtils.and(prefixFilter, ioFilter);
+		List<File> files = FileFilterUtils.filterList(filter, allTemplates);
+		Collections.sort(files);
 
-			URI osPath = new File(outputSheetsDir).toURI();
-			URI[] uriList = new URI[files.size()];
-			for (int i = 0; i < uriList.length; i++)
-			{
-				uriList[i] = osPath.relativize(files.get(i).toURI());
-			}
-			fileList.setListData(uriList);
-			if (StringUtils.isNotEmpty(defaultSheet))
-			{
-				URI defaultPath = new File(defaultSheet).toURI();
-				fileList.setSelectedValue(osPath.relativize(defaultPath), true);
-			}
+		URI osPath = new File(outputSheetsDir).toURI();
+		URI[] uriList = new URI[files.size()];
+		Arrays.setAll(uriList, i -> osPath.relativize(files.get(i).toURI()));
+		fileList.setListData(uriList);
+		if (StringUtils.isNotEmpty(defaultSheet))
+		{
+			URI defaultPath = new File(defaultSheet).toURI();
+			fileList.setSelectedValue(osPath.relativize(defaultPath), true);
 		}
 	}
 
-	private class PDFExporter extends SwingWorker<Object, Object>
+	private final class PDFExporter extends SwingWorker<Boolean, Boolean>
 	{
 
 		private final File saveFile;
 		private final String name;
 
-		private PDFExporter(File saveFile, String extension, String name)
+		private PDFExporter(File saveFile, String name)
 		{
 			this.saveFile = saveFile;
 			this.name = name;
@@ -569,9 +541,9 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 		}
 
 		@Override
-		protected Object doInBackground() throws Exception
+		protected Boolean doInBackground()
 		{
-			Boolean result = false;
+			boolean result;
 			if (partyBox.isSelected())
 			{
 				PartyFacade party = CharacterManager.getCharacters();
@@ -591,7 +563,7 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 			boolean exception = true;
 			try
 			{
-				if ((Boolean) get())
+				if (get())
 				{
 					exception = false;
 				}
@@ -626,14 +598,11 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 				}
 			}
 		}
-
 	}
 
-	private class FileSearcher extends SwingWorker<Collection<File>, Object>
+	private static Collection<File> getAllTemplates()
 	{
-
-		@Override
-		protected Collection<File> doInBackground() throws IOException
+		try
 		{
 			File dir;
 			String outputSheetDirectory = SettingsHandler.getGame().getOutputSheetDirectory();
@@ -648,7 +617,7 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 				if (!dir.isDirectory())
 				{
 					Logging.errorPrint(
-						"Unable to find game mode outputsheets at " + dir.getCanonicalPath() + ". Trying base.");
+							"Unable to find game mode outputsheets at " + dir.getCanonicalPath() + ". Trying base.");
 					dir = new File(ConfigurationSettings.getOutputSheetsDir());
 				}
 			}
@@ -660,34 +629,21 @@ public final class ExportDialog extends JDialog implements ActionListener, ListS
 			return Files.walk(dir.toPath())
 			            .filter(f -> !f.endsWith(".fo"))
 			            .map(Path::toFile)
-					    .collect(Collectors.toList());
+			            .collect(Collectors.toList());
 		}
-
-		@Override
-		protected void done()
+		catch (IOException e)
 		{
-			if (isCancelled())
-			{
-				return;
-			}
-			try
-			{
-				allTemplates = get();
-				progressBar.setVisible(false);
-				refreshFiles();
-			}
-			catch (InterruptedException | ExecutionException ex)
-			{
-				Logging.errorPrint("failed to search files", ex);
-			}
+			Logging.errorPrint("failed to find templates", e);
+			return Collections.emptyList();
 		}
-
 	}
 
 	private enum SheetFilter implements FilenameFilter
 	{
 
-		HTMLXML("htmlxml", "Standard", "HTM"), PDF("pdf", "PDF", "PDF"), TEXT("text", "Text", "TXT");
+		HTMLXML("htmlxml", "Standard", "HTM"),
+		PDF("pdf", "PDF", "PDF"),
+		TEXT("text", "Text", "TXT");
 		private final String dirFilter;
 		private final String description;
 		private final String tag;

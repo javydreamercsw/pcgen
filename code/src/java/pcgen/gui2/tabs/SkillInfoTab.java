@@ -37,7 +37,6 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -81,6 +80,8 @@ import pcgen.gui2.util.event.ListDataAdapter;
 import pcgen.gui2.util.table.TableCellUtilities;
 import pcgen.gui2.util.table.TableCellUtilities.SpinnerEditor;
 import pcgen.gui2.util.table.TableCellUtilities.SpinnerRenderer;
+import pcgen.gui3.JFXPanelFromResource;
+import pcgen.gui3.SimpleHtmlPanelController;
 import pcgen.system.LanguageBundle;
 import pcgen.util.enumeration.Tab;
 
@@ -97,19 +98,22 @@ public class SkillInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 	private final TabTitle tabTitle;
 	private final FilterButton<CharacterFacade, Skill> cFilterButton;
 	private final FilterButton<CharacterFacade, Skill> trainedFilterButton;
-	private final JEditorPane htmlPane;
-	private final JComboBox skillFilterBox;
 
-	public SkillInfoTab()
+	private final JComboBox<SkillFilter> skillFilterBox;
+	private final JFXPanelFromResource<SimpleHtmlPanelController> htmlPane;
+	SkillInfoTab()
 	{
-		super("Skill");
+		super();
 		this.skillTable = new FilteredTreeViewTable<>();
 		this.skillpointTable = new JTable();
 		this.infoPane = new InfoPane();
 		this.cFilterButton = new FilterButton<>("SkillQualified");
 		this.trainedFilterButton = new FilterButton<>("SkillTrained");
 		this.tabTitle = new TabTitle(Tab.SKILLS);
-		this.htmlPane = new JEditorPane();
+		this.htmlPane = new JFXPanelFromResource<>(
+				SimpleHtmlPanelController.class,
+				"SimpleHtmlPanel.fxml"
+		);;
 		this.skillFilterBox = new JComboBox<>();
 		initComponents();
 	}
@@ -152,11 +156,6 @@ public class SkillInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 		tableScrollPane = new JScrollPane(skillpointTable);
 		tablePanel.add(tableScrollPane, constraints);
 
-		htmlPane.setOpaque(false);
-		htmlPane.setEditable(false);
-		htmlPane.setFocusable(false);
-		htmlPane.setContentType("text/html"); //$NON-NLS-1$
-
 		skillFilterBox.setRenderer(new DefaultListCellRenderer());
 
 		JScrollPane selScrollPane = new JScrollPane(htmlPane);
@@ -166,10 +165,10 @@ public class SkillInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 		selScrollPane.setPreferredSize(new Dimension(530, 300));
 
 		FlippingSplitPane topPane =
-				new FlippingSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, availPanel, skillPanel, "SkillTop");
+				new FlippingSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, availPanel, skillPanel);
 		setTopComponent(topPane);
 
-		FlippingSplitPane bottomPane = new FlippingSplitPane(JSplitPane.HORIZONTAL_SPLIT, "SkillBottom");
+		FlippingSplitPane bottomPane = new FlippingSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		bottomPane.setLeftComponent(tablePanel);
 		tablePanel.setPreferredSize(new Dimension(650, 100));
 		bottomPane.setRightComponent(infoPane);
@@ -390,7 +389,7 @@ public class SkillInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 	private class FilterHandler implements ListSelectionListener
 	{
 
-		private final Filter<CharacterFacade, Skill> cFilter = new Filter<CharacterFacade, Skill>()
+		private final Filter<CharacterFacade, Skill> cFilter = new Filter<>()
 		{
 
 			@Override
@@ -407,7 +406,7 @@ public class SkillInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 
 		};
 
-		private final Filter<CharacterFacade, Skill> gainedFilter = new Filter<CharacterFacade, Skill>()
+		private final Filter<CharacterFacade, Skill> gainedFilter = new Filter<>()
 		{
 
 			@Override

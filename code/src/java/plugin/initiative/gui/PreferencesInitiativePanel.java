@@ -15,50 +15,50 @@
  *  You should have received a copy of the GNU Lesser General Public
  *  License along with this library; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
- *  PreferencesTrackingPanel.java
  */
 package plugin.initiative.gui;
 
 import java.awt.BorderLayout;
 
-import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-
 import pcgen.core.SettingsHandler;
+import pcgen.gui2.prefs.PCGenPrefsPanel;
+import pcgen.gui3.GuiUtility;
 import pcgen.system.LanguageBundle;
 import plugin.initiative.InitiativePlugin;
+
+import javafx.scene.control.CheckBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 
 /**
  * Panel that tracks the miscellaneous preferences.
  */
-public class PreferencesInitiativePanel extends gmgen.gui.PreferencesPanel
+public class PreferencesInitiativePanel extends PCGenPrefsPanel
 {
-	private static final long serialVersionUID = -2518295310535094440L;
-
 	private static final String SETTING_ROLL_PC_INITIATIVES = ".rollPCInitiatives"; //$NON-NLS-1$
 
-	private JPanel performancePanel;
-	private JPanel mainPanel;
-	private JCheckBox rollPCInitiatives;
+	private CheckBox rollPCInitiatives;
 
-	/** Creates new form PreferencesMiscPanel */
 	public PreferencesInitiativePanel()
 	{
 		initComponents();
-		initPreferences();
+		this.applyOptionValuesToControls();
 	}
 
 	@Override
-	public void applyPreferences()
+	public void setOptionsBasedOnControls()
 	{
 		SettingsHandler.setGMGenOption(InitiativePlugin.LOG_NAME + SETTING_ROLL_PC_INITIATIVES, getRollPCInitiatives());
 	}
 
 	@Override
-	public void initPreferences()
+	public String getTitle()
+	{
+		return LanguageBundle.getString("in_plugin_initiative");
+	}
+
+	@Override
+	public void applyOptionValuesToControls()
 	{
 		setRollPCInitiatives(
 			SettingsHandler.getGMGenOption(InitiativePlugin.LOG_NAME + SETTING_ROLL_PC_INITIATIVES, true));
@@ -69,7 +69,7 @@ public class PreferencesInitiativePanel extends gmgen.gui.PreferencesPanel
 	 *
 	 * @param b
 	 */
-	private void setRollPCInitiatives(boolean b)
+	private void setRollPCInitiatives(final boolean b)
 	{
 		rollPCInitiatives.setSelected(b);
 	}
@@ -84,30 +84,24 @@ public class PreferencesInitiativePanel extends gmgen.gui.PreferencesPanel
 		return rollPCInitiatives.isSelected();
 	}
 
+	private void initComponents()
+	{
+
+		rollPCInitiatives = new CheckBox();
+
+		rollPCInitiatives.setText(LanguageBundle.getString("in_plugin_initiative_rollPcInit"));
+
+		Pane vbox = new VBox();
+		vbox.getChildren().add(rollPCInitiatives);
+
+		setLayout(new BorderLayout());
+		add(GuiUtility.wrapParentAsJFXPanel(vbox), BorderLayout.CENTER);
+	}
+
+	// TODO: get rid of this
 	@Override
 	public String toString()
 	{
-		return LanguageBundle.getString("in_plugin_initiative"); //$NON-NLS-1$
-	}
-
-	private void initComponents()
-	{
-		setLayout(new BorderLayout());
-
-		mainPanel = new JPanel();
-		rollPCInitiatives = new JCheckBox();
-
-		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-
-		performancePanel = new JPanel();
-		performancePanel.setLayout(new BoxLayout(performancePanel, BoxLayout.Y_AXIS));
-		rollPCInitiatives.setText(LanguageBundle.getString("in_plugin_initiative_rollPcInit")); //$NON-NLS-1$
-		performancePanel.add(rollPCInitiatives);
-
-		mainPanel.add(performancePanel);
-
-		JScrollPane jScrollPane1 = new JScrollPane();
-		jScrollPane1.setViewportView(mainPanel);
-		add(jScrollPane1, BorderLayout.CENTER);
+		return this.getTitle();
 	}
 }

@@ -22,7 +22,6 @@ import static pcgen.gui2.facade.EquipNode.NodeType.EQUIPMENT;
 import static pcgen.gui2.tabs.equip.EquipmentSelection.EQUIPMENT_ARRAY_FLAVOR;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Insets;
@@ -81,16 +80,18 @@ import pcgen.gui2.tabs.models.CharacterComboBoxModel;
 import pcgen.gui2.tools.FlippingSplitPane;
 import pcgen.gui2.tools.Icons;
 import pcgen.gui2.tools.InfoPane;
-import pcgen.gui2.tools.PrefTableColumnModel;
 import pcgen.gui2.util.FontManipulation;
 import pcgen.gui2.util.JDynamicTable;
 import pcgen.gui2.util.JTreeTable;
 import pcgen.gui2.util.event.PopupMouseAdapter;
+import pcgen.gui2.util.table.DefaultDynamicTableColumnModel;
 import pcgen.gui2.util.table.DynamicTableColumnModel;
+import pcgen.gui3.utilty.ColorUtilty;
 import pcgen.system.LanguageBundle;
 import pcgen.util.enumeration.Load;
 import pcgen.util.enumeration.Tab;
 
+import javafx.scene.paint.Color;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -126,7 +127,6 @@ public class EquipInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 
 	public EquipInfoTab()
 	{
-		super("Equip");
 		//TODO: remove this when optimized sorting is implemented
 		this.equipmentTable = new JDynamicTable()
 		{
@@ -185,7 +185,7 @@ public class EquipInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 		removeSetButton.setMargin(new Insets(0, 0, 0, 0));
 
 		setOrientation(HORIZONTAL_SPLIT);
-		FlippingSplitPane splitPane = new FlippingSplitPane(VERTICAL_SPLIT, "EquipMain");
+		FlippingSplitPane splitPane = new FlippingSplitPane(VERTICAL_SPLIT);
 
 		JPanel panel = new JPanel(new BorderLayout());
 
@@ -269,26 +269,44 @@ public class EquipInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 
 	private DynamicTableColumnModel createEquipmentColumnModel()
 	{
-		PrefTableColumnModel model = new PrefTableColumnModel("EquipList", 1);
+		DefaultDynamicTableColumnModel model = new DefaultDynamicTableColumnModel(1);
 
 		TableColumn column = new TableColumn(0);
 		column.setHeaderValue(LanguageBundle.getString("in_nameLabel")); //$NON-NLS-1$
-		model.addColumn(column, true, 150);
+		column.setPreferredWidth(150);
+		model.addColumn(column);
+		model.setVisible(column, true);
+
 		column = new TableColumn(1);
 		column.setHeaderValue(LanguageBundle.getString("in_type")); //$NON-NLS-1$
-		model.addColumn(column, true, 75);
+		column.setPreferredWidth(75);
+		model.addColumn(column);
+		model.setVisible(column, true);
+
 		column = new TableColumn(2);
 		column.setHeaderValue(LanguageBundle.getString("in_equipLocationAbbrev")); //$NON-NLS-1$
-		model.addColumn(column, true, 75);
+		column.setPreferredWidth(75);
+		model.addColumn(column);
+		model.setVisible(column, true);
+
 		column = new TableColumn(3);
 		column.setHeaderValue(LanguageBundle.getString("in_equipQuantityAbbrev")); //$NON-NLS-1$
-		model.addColumn(column, true, 75);
+		column.setPreferredWidth(75);
+		model.addColumn(column);
+		model.setVisible(column, true);
+
 		column = new TableColumn(4);
 		column.setHeaderValue(LanguageBundle.getString("in_equipWeightAbbrev")); //$NON-NLS-1$
-		model.addColumn(column, true, 75);
+		column.setPreferredWidth(75);
+		model.addColumn(column);
+		model.setVisible(column, true);
+
 		column = new TableColumn(5);
 		column.setHeaderValue(LanguageBundle.getString("in_descrip")); //$NON-NLS-1$
-		model.addColumn(column, false, 75);
+		column.setPreferredWidth(75);
+		model.addColumn(column);
+		model.setVisible(column, false);
+
 		return model;
 	}
 
@@ -395,7 +413,7 @@ public class EquipInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 
 		loadLabel.setText(text);
 		loadLabel.setFont(font);
-		loadLabel.setForeground(color);
+		loadLabel.setForeground(ColorUtilty.colorToAWTColor(color));
 	}
 
 	@Override
@@ -677,11 +695,11 @@ public class EquipInfoTab extends FlippingSplitPane implements CharacterInfoTab,
 			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			if (value instanceof EquipmentFacade && !character.isQualifiedFor((EquipmentFacade) value))
 			{
-				setForeground(UIPropertyContext.getNotQualifiedColor());
+				setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor()));
 			}
 			else if (!isSelected)
 			{
-				setForeground(UIPropertyContext.getQualifiedColor());
+				setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getQualifiedColor()));
 			}
 			return this;
 		}

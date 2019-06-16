@@ -20,6 +20,7 @@ package pcgen.gui3.component;
 
 import java.io.IOException;
 
+import pcgen.gui3.core.IORuntimeException;
 import pcgen.system.LanguageBundle;
 
 import javafx.application.Platform;
@@ -33,7 +34,7 @@ import javafx.scene.text.Text;
 /**
  * Reusuable status bar. Displays a message + Progress Bar.
  */
-public class PCGenStatusBar extends HBox
+public final class PCGenStatusBar extends HBox
 {
 	private final PCGenStatusBarModel model = new PCGenStatusBarModel();
 
@@ -46,14 +47,21 @@ public class PCGenStatusBar extends HBox
 	@FXML
 	private Label progressText;
 
-	public PCGenStatusBar() throws IOException
+	public PCGenStatusBar()
 	{
-		FXMLLoader loader = new FXMLLoader();
-		loader.setResources(LanguageBundle.getBundle());
-		loader.setController(this);
-		loader.setRoot(this);
-		loader.setLocation(getClass().getResource("PCGenStatusBar.fxml"));
-		loader.load();
+		try
+		{
+			FXMLLoader loader = new FXMLLoader();
+			loader.setResources(LanguageBundle.getBundle());
+			loader.setController(this);
+			loader.setRoot(this);
+			loader.setLocation(getClass().getResource("PCGenStatusBar.fxml"));
+			loader.load();
+		}
+		catch (IOException e)
+		{
+			throw new IORuntimeException(e);
+		}
 	}
 
 	@FXML

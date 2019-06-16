@@ -54,6 +54,7 @@ import pcgen.core.analysis.SizeUtilities;
 import pcgen.core.display.CharacterDisplay;
 import pcgen.core.display.UnarmedDamageDisplay;
 import pcgen.io.ExportHandler;
+import pcgen.system.LanguageBundle;
 import pcgen.util.Delta;
 import pcgen.util.Logging;
 import pcgen.util.enumeration.AttackType;
@@ -531,7 +532,7 @@ public class WeaponToken extends Token
 				for (Map.Entry<String, String> me : qualityMap.entrySet())
 				{
 					qualities
-						.add(new StringBuilder().append(me.getKey()).append(": ").append(me.getValue()).toString());
+						.add(me.getKey() + ": " + me.getValue());
 				}
 				return StringUtil.join(qualities, ", ");
 			}
@@ -796,11 +797,10 @@ public class WeaponToken extends Token
 		{
 			return critMult1.toString();
 		}
-		StringBuilder sb = new StringBuilder();
-		sb.append(critMult1);
-		sb.append('/');
-		sb.append(critMult2);
-		return sb.toString();
+		String sb = String.valueOf(critMult1)
+				+ '/'
+				+ critMult2;
+		return sb;
 	}
 
 	/**
@@ -1635,13 +1635,13 @@ public class WeaponToken extends Token
 			if ((!isDouble && !isDoubleSplit && (hitMode != HITMODE_THHIT)) || (isDoubleSplit
 				&& (hitMode == HITMODE_BASEHIT || hitMode == HITMODE_OHHIT || hitMode == HITMODE_TWPHITH)))
 			{
-				return SettingsHandler.getInvalidToHitText();
+				return LanguageBundle.getString("SettingsHandler.not.applicable");
 			}
 		}
 
 		if (eq.isMelee() && eq.isWeaponOutsizedForPC(pc) && !eq.isNatural())
 		{
-			return SettingsHandler.getInvalidToHitText();
+			return LanguageBundle.getString("SettingsHandler.not.applicable");
 		}
 
 		int weaponBaseBonus = (int) eq.bonusTo(pc, "WEAPON", "WEAPONBAB", true);
@@ -2210,13 +2210,13 @@ public class WeaponToken extends Token
 			if (!isDouble && !isDoubleSplit && (damageMode != DAMAGEMODE_NORMAL) && (damageMode != DAMAGEMODE_TWOHANDS)
 				&& (damageMode != DAMAGEMODE_DOUBLE))
 			{
-				return SettingsHandler.getInvalidDmgText();
+				return LanguageBundle.getString("SettingsHandler.not.applicable");
 			}
 		}
 
 		if (eq.isMelee() && eq.isWeaponOutsizedForPC(pc) && !eq.isNatural())
 		{
-			return SettingsHandler.getInvalidDmgText();
+			return LanguageBundle.getString("SettingsHandler.not.applicable");
 		}
 
 		if (eq.isWeaponLightForPC(pc) && (hands == 2))

@@ -18,19 +18,11 @@
  */
 package pcgen.gui2.tabs.models;
 
-import java.awt.Image;
-import java.awt.Toolkit;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.Dictionary;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -38,14 +30,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadFactory;
 
-import javax.swing.ImageIcon;
-import javax.swing.JEditorPane;
 import javax.swing.SwingUtilities;
-import javax.swing.text.EditorKit;
-import javax.swing.text.html.HTMLDocument;
 
 import pcgen.base.lang.UnreachableError;
 import pcgen.facade.core.CharacterFacade;
+import pcgen.gui3.JFXPanelFromResource;
+import pcgen.gui3.SimpleHtmlPanelController;
 import pcgen.io.ExportHandler;
 import pcgen.util.Logging;
 
@@ -64,13 +54,12 @@ public class HtmlSheetSupport
 
 	private WeakReference<CharacterFacade> characterRef;
 	private final File templateFile;
-	private final JEditorPane htmlPane;
-	private ImageCache cache = new ImageCache();
-	private FutureTask<HTMLDocument> refresher = null;
+	private final JFXPanelFromResource<SimpleHtmlPanelController> htmlPane;
+	private FutureTask<String> refresher = null;
 	private boolean installed = false;
 	private String missingSheetMsg;
 
-	public HtmlSheetSupport(JEditorPane htmlPane, String infoSheetFile)
+	public HtmlSheetSupport(JFXPanelFromResource<SimpleHtmlPanelController> htmlPane, String infoSheetFile)
 	{
 		if (!StringUtils.isEmpty(infoSheetFile))
 		{
@@ -83,7 +72,7 @@ public class HtmlSheetSupport
 		this.htmlPane = htmlPane;
 	}
 
-	public HtmlSheetSupport(CharacterFacade character, JEditorPane htmlPane, String infoSheetFile)
+	public HtmlSheetSupport(CharacterFacade character, JFXPanelFromResource<SimpleHtmlPanelController> htmlPane, String infoSheetFile)
 	{
 		this(htmlPane, infoSheetFile);
 		setCharacter(character);
@@ -109,7 +98,7 @@ public class HtmlSheetSupport
 	{
 		if (templateFile == null)
 		{
-			htmlPane.setText(missingSheetMsg);
+			htmlPane.getController().setHtml(missingSheetMsg);
 			return;
 		}
 		if (characterRef == null || characterRef.get() == null)
@@ -118,7 +107,7 @@ public class HtmlSheetSupport
 		}
 		if (refresher != null && !refresher.isDone())
 		{
-			refresher.cancel(false);
+			refresher.cancel(true);
 		}
 		refresher = new Refresher();
 		executor.execute(refresher);
@@ -129,10 +118,10 @@ public class HtmlSheetSupport
 		this.missingSheetMsg = missingSheetMsg;
 	}
 
-	private class Refresher extends FutureTask<HTMLDocument>
+	private final class Refresher extends FutureTask<String>
 	{
 
-		public Refresher()
+		private Refresher()
 		{
 			super(new DocumentBuilder());
 		}
@@ -146,8 +135,8 @@ public class HtmlSheetSupport
 			}
 			try
 			{
-				final HTMLDocument doc = get();
-				SwingUtilities.invokeAndWait(() -> htmlPane.setDocument(doc));
+				final String doc = get();
+				SwingUtilities.invokeAndWait(() -> htmlPane.getController().setHtml(doc));
 			}
 			catch (InvocationTargetException ex)
 			{
@@ -162,94 +151,17 @@ public class HtmlSheetSupport
 
 	}
 
-	private class DocumentBuilder implements Callable<HTMLDocument>
+	private class DocumentBuilder implements Callable<String>
 	{
 
 		@Override
-		public HTMLDocument call() throws Exception
+		public String call() throws Exception
 		{
-			StringWriter writer = new StringWriter();
-			characterRef.get().export(new ExportHandler(templateFile), new BufferedWriter(writer));
-			StringReader reader = new StringReader(writer.toString());
-			EditorKit kit = htmlPane.getEditorKit();
-			HTMLDocument doc = new HTMLDocument();
-
-			doc.setBase(templateFile.getParentFile().toURI().toURL());
-			doc.putProperty("IgnoreCharsetDirective", true);
-			// XXX - This is a hack specific to Sun's JDK 5.0 and in no
-			// way should be trusted to work in future java releases
-			// (though it still might) - Connor Petty
-			doc.putProperty("imageCache", cache);
-			kit.read(reader, doc, 0);
-			return doc;
-		}
-
-	}
-
-	/**
-	 * A cache for images loaded onto the info pane.
-	 */
-	private static class ImageCache extends Dictionary<URL, Image>
-	{
-
-		private HashMap<URL, Image> cache = new HashMap<>();
-
-		@Override
-		public int size()
-		{
-			return cache.size();
-		}
-
-		@Override
-		public boolean isEmpty()
-		{
-			return cache.isEmpty();
-		}
-
-		@Override
-		public Enumeration<URL> keys()
-		{
-			return Collections.enumeration(cache.keySet());
-		}
-
-		@Override
-		public Enumeration<Image> elements()
-		{
-			return Collections.enumeration(cache.values());
-		}
-
-		@Override
-		public Image get(Object key)
-		{
-			if (!(key instanceof URL))
+			try (StringWriter writer = new StringWriter())
 			{
-				return null;
+				characterRef.get().export(new ExportHandler(templateFile), new BufferedWriter(writer));
+				return writer.toString();
 			}
-			URL src = (URL) key;
-			if (!cache.containsKey(src))
-			{
-				Image newImage = Toolkit.getDefaultToolkit().createImage(src);
-				if (newImage != null)
-				{
-					// Force the image to be loaded by using an ImageIcon.
-					ImageIcon ii = new ImageIcon();
-					ii.setImage(newImage);
-				}
-				cache.put(src, newImage);
-			}
-			return cache.get(src);
-		}
-
-		@Override
-		public Image put(URL key, Image value)
-		{
-			return cache.put(key, value);
-		}
-
-		@Override
-		public Image remove(Object key)
-		{
-			return cache.remove(key);
 		}
 
 	}

@@ -101,7 +101,7 @@ public final class PostLevelUpDialog extends JDialog implements ActionListener
 
 		Frame frame = JOptionPane.getFrameForComponent(parent);
 		PostLevelUpDialog dialog = new PostLevelUpDialog(frame, character, oldLevel);
-		Utility.setComponentRelativeLocation(frame, dialog);
+		dialog.setLocationRelativeTo(frame);
 		dialog.setVisible(true);
 	}
 
@@ -198,7 +198,7 @@ public final class PostLevelUpDialog extends JDialog implements ActionListener
 			};
 
 			data = new Object[numLevels + 1][5];
-			classLevelMap = new HashMap<PCClass, MutableInt>();
+			classLevelMap = new HashMap<>();
 			int gainedTotal = 0;
 			int rolledTotal = 0;
 			int pointTotal = 0;

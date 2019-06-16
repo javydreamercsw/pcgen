@@ -95,13 +95,15 @@ import pcgen.gui2.tabs.summary.InfoPaneHandler;
 import pcgen.gui2.tabs.summary.LanguageTableModel;
 import pcgen.gui2.tabs.summary.StatTableModel;
 import pcgen.gui2.tools.Icons;
-import pcgen.gui2.tools.Utility;
 import pcgen.gui2.util.FacadeComboBoxModel;
 import pcgen.gui2.util.FontManipulation;
 import pcgen.gui2.util.ManagedField;
 import pcgen.gui2.util.SignIcon;
 import pcgen.gui2.util.SignIcon.Sign;
 import pcgen.gui2.util.SimpleTextIcon;
+import pcgen.gui3.JFXPanelFromResource;
+import pcgen.gui3.SimpleHtmlPanelController;
+import pcgen.gui3.utilty.ColorUtilty;
 import pcgen.system.LanguageBundle;
 import pcgen.util.enumeration.Tab;
 
@@ -153,7 +155,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 	private final JButton removeLevelsButton;
 	private final JButton hpButton;
 	private final JLabel totalHPLabel;
-	private final JEditorPane infoPane;
+	private final JFXPanelFromResource<SimpleHtmlPanelController> infoPane;
 	private final JLabel statTotalLabel;
 	private final JLabel statTotal;
 	private final JLabel modTotalLabel;
@@ -202,7 +204,10 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 		this.expsubtractButton = new JButton();
 		this.hpButton = new JButton();
 		this.totalHPLabel = new JLabel();
-		this.infoPane = new JEditorPane();
+		this.infoPane = new JFXPanelFromResource<>(
+				SimpleHtmlPanelController.class,
+				"SimpleHtmlPanel.fxml"
+		);
 		this.statTotalLabel = new JLabel();
 		this.statTotal = new JLabel();
 		this.modTotalLabel = new JLabel();
@@ -329,8 +334,6 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 		statsPanel.add(statTotalPanel);
 
 		middlePanel.add(statsPanel);
-
-		InfoPaneHandler.initializeEditorPane(infoPane);
 
 		pane = new JScrollPane(infoPane);
 		setPanelTitle(pane, LanguageBundle.getString("in_sumStats")); //$NON-NLS-1$
@@ -888,7 +891,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 
 			//initialize character type model
 			characterTypeModel =
-					new CharacterComboBoxModel<String>(dataset.getCharacterTypes(), character.getCharacterTypeRef())
+					new CharacterComboBoxModel<>(dataset.getCharacterTypes(), character.getCharacterTypeRef())
 					{
 
 						@Override
@@ -901,7 +904,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 
 			//initialize gender model
 			genderModel =
-					new CharacterComboBoxModel<Gender>(character.getAvailableGenders(), character.getGenderRef())
+					new CharacterComboBoxModel<>(character.getAvailableGenders(), character.getGenderRef())
 					{
 
 						@Override
@@ -914,7 +917,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 
 			//initialize handed model
 			handsModel =
-					new CharacterComboBoxModel<Handed>(character.getAvailableHands(), character.getHandedRef())
+					new CharacterComboBoxModel<>(character.getAvailableHands(), character.getHandedRef())
 					{
 
 						@Override
@@ -929,7 +932,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 			{
 				//initialize alignment model
 				alignmentModel =
-						new CharacterComboBoxModel<PCAlignment>(dataset.getAlignments(), character.getAlignmentRef())
+						new CharacterComboBoxModel<>(dataset.getAlignments(), character.getAlignmentRef())
 						{
 
 							@Override
@@ -944,7 +947,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 			if (character.isFeatureEnabled(CControl.DOMAINFEATURE))
 			{
 				//initialize deity model
-				deityModel = new CharacterComboBoxModel<Deity>(dataset.getDeities(), character.getDeityRef())
+				deityModel = new CharacterComboBoxModel<>(dataset.getDeities(), character.getDeityRef())
 				{
 
 					@Override
@@ -957,7 +960,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 			}
 
 			//initialize race model
-			raceModel = new DeferredCharacterComboBoxModel<Race>(dataset.getRaces(), character.getRaceRef())
+			raceModel = new DeferredCharacterComboBoxModel<>(dataset.getRaces(), character.getRaceRef())
 			{
 
 				@Override
@@ -969,8 +972,10 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 			};
 
 			//initialize age category model
-			ageCatModel = new CharacterComboBoxModel<String>(character.getAgeCategories(),
-				character.getAgeCategoryRef())
+			ageCatModel = new CharacterComboBoxModel<>(
+					character.getAgeCategories(),
+					character.getAgeCategoryRef()
+			)
 			{
 
 				@Override
@@ -982,7 +987,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 			};
 
 			//initialize XP table model
-			xpTableModel = new CharacterComboBoxModel<String>(dataset.getXPTableNames(), character.getXPTableNameRef())
+			xpTableModel = new CharacterComboBoxModel<>(dataset.getXPTableNames(), character.getXPTableNameRef())
 			{
 
 				@Override
@@ -1086,11 +1091,12 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 				if (index == -1)
 				{// this is a hack to prevent the combobox from overwriting the text color
 					setText("");
-					setIcon(new SimpleTextIcon(list, value.toString(), UIPropertyContext.getNotQualifiedColor()));
+					setIcon(new SimpleTextIcon(list, value.toString(),
+							ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor())));
 				}
 				else
 				{
-					setForeground(UIPropertyContext.getNotQualifiedColor());
+					setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor()));
 				}
 			}
 			return this;
@@ -1111,11 +1117,12 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 				if (index == -1)
 				{// this is a hack to prevent the combobox from overwriting the text color
 					setText("");
-					setIcon(new SimpleTextIcon(list, value.toString(), UIPropertyContext.getNotQualifiedColor()));
+					setIcon(new SimpleTextIcon(list, value.toString(),
+							ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor())));
 				}
 				else
 				{
-					setForeground(UIPropertyContext.getNotQualifiedColor());
+					setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor()));
 				}
 			}
 			return this;
@@ -1317,10 +1324,10 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 		@Override
 		public void actionPerformed(ActionEvent e)
 		{
-			CharacterStatsPanel charStatsPanel = new CharacterStatsPanel(null);
+			CharacterStatsPanel charStatsPanel = new CharacterStatsPanel();
 			SinglePrefDialog prefsDialog = new SinglePrefDialog(parent, charStatsPanel);
 			charStatsPanel.setParent(prefsDialog);
-			Utility.setComponentRelativeLocation(parent, prefsDialog);
+			prefsDialog.setLocationRelativeTo(parent);
 			prefsDialog.setVisible(true);
 			character.refreshRollMethod();
 		}
@@ -1345,7 +1352,7 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 		public void actionPerformed(ActionEvent e)
 		{
 			KitSelectionDialog kitDialog = new KitSelectionDialog(frame, character);
-			Utility.setComponentRelativeLocation(frame, kitDialog);
+			kitDialog.setLocationRelativeTo(frame);
 			kitDialog.setVisible(true);
 		}
 
@@ -1675,13 +1682,6 @@ public class SummaryInfoTab extends JPanel implements CharacterInfoTab, TodoHand
 			}
 			return super.getComponentAfter(aContainer, aComponent);
 		}
-
-		@Override
-		public Component getComponentBefore(Container aContainer, Component aComponent)
-		{
-			return super.getComponentBefore(aContainer, aComponent);
-		}
-
 	}
 
 }

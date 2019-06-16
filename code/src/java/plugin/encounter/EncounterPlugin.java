@@ -25,11 +25,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -38,6 +41,15 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.ListModel;
 
+import gmgen.GMGenSystem;
+import gmgen.GMGenSystemView;
+import gmgen.io.ReadXML;
+import gmgen.io.VectorTable;
+import gmgen.plugin.InitHolderList;
+import gmgen.plugin.PcgCombatant;
+import gmgen.plugin.dice.Dice;
+import gmgen.pluginmgr.messages.AddMenuItemToGMGenToolsMenuMessage;
+import gmgen.pluginmgr.messages.RequestAddTabToGMGenMessage;
 import pcgen.base.formula.Formula;
 import pcgen.cdom.base.Constants;
 import pcgen.cdom.base.FormulaFactory;
@@ -69,23 +81,13 @@ import pcgen.system.LanguageBundle;
 import pcgen.util.Logging;
 import plugin.encounter.gui.EncounterView;
 
-import gmgen.GMGenSystem;
-import gmgen.GMGenSystemView;
-import gmgen.io.ReadXML;
-import gmgen.io.VectorTable;
-import gmgen.plugin.InitHolderList;
-import gmgen.plugin.PcgCombatant;
-import gmgen.plugin.dice.Dice;
-import gmgen.pluginmgr.messages.AddMenuItemToGMGenToolsMenuMessage;
-import gmgen.pluginmgr.messages.RequestAddTabToGMGenMessage;
-
 /**
  * This class controls the various classes that are
  * involved in the functionality of the Encounter Generator.  This {@code class
  * } is a plugin for the {@code GMGenSystem}, is called by the
  * {@code PluginLoader} and will create a model and a view for this plugin.
  */
-@SuppressWarnings({"UseOfObsoleteCollectionType", "PMD.ReplaceVectorWithList"})
+@SuppressWarnings({"UseOfObsoleteCollectionType", "PMD.ReplaceVectorWithList", "PMD.UseArrayListInsteadOfVector"})
 public class EncounterPlugin extends MouseAdapter implements InteractivePlugin, ActionListener, ItemListener
 {
 	/** Directory where Data for this plug-in is expected to be. */
@@ -330,11 +332,11 @@ public class EncounterPlugin extends MouseAdapter implements InteractivePlugin, 
 	/**
 	 * Handles the <b>Remove Creature</b> button.
 	 */
-	public void handleRemoveCreature()
+	private void handleRemoveCreature()
 	{
 		if (!theView.getEncounterCreatures().isSelectionEmpty())
 		{
-			List values = theView.getEncounterCreatures().getSelectedValuesList();
+			List<Object> values = theView.getEncounterCreatures().getSelectedValuesList();
 			for (Object value : values)
 			{
 				theModel.removeElement(value);
@@ -349,52 +351,43 @@ public class EncounterPlugin extends MouseAdapter implements InteractivePlugin, 
 	 */
 	public void handleTransferToTracker()
 	{
-		int i;
-		PlayerCharacter aPC;
 		JFrame oldRoot = Globals.getRootFrame();
 		Globals.setRootFrame(GMGenSystem.inst);
 		theModel.setPCs(theModel.size());
 
-		try
+		for (int i = 0; i < theModel.size(); i++)
 		{
-			for (i = 0; i < theModel.size(); i++)
+			PlayerCharacter aPC = theModel.getPCs()[i];
+			aPC.setImporting(false);
+
+			if (!handleRace(aPC, i))
 			{
-				aPC = theModel.getPCs()[i];
-				aPC.setImporting(false);
-
-				if (!handleRace(aPC, i))
-				{
-					continue;
-				}
-
-				LevelCommandFactory lcf = aPC.getDisplay().getRace().get(ObjectKey.MONSTER_CLASS);
-
-				if (lcf != null)
-				{
-					handleMonster(aPC, lcf);
-				}
-				else
-				{
-					handleNonMonster(aPC);
-				}
-
-				handleEquipment(aPC);
-				aPC.setPCAttribute(PCStringKey.PLAYERSNAME, "Enemy");
-				theList.add(new PcgCombatant(aPC, "Enemy", messageHandler));
+				continue;
 			}
 
-			JOptionPane.showMessageDialog(null,
-				"You will now be returned to PCGen so that you can finalise your selected combatants.\n"
-				+ "Once they are finalised, return to the GMGen Initiative tab to begin the combat!",
-				"Combatant Setup Complete", JOptionPane.INFORMATION_MESSAGE);
+			LevelCommandFactory lcf = aPC.getDisplay().getRace().get(ObjectKey.MONSTER_CLASS);
 
-			messageHandler.handleMessage(new TransmitInitiativeValuesBetweenComponentsMessage(this, theList));
-			removeAll();
+			if (lcf != null)
+			{
+				handleMonster(aPC, lcf);
+			}
+			else
+			{
+				handleNonMonster(aPC);
+			}
+
+			handleEquipment(aPC);
+			aPC.setPCAttribute(PCStringKey.PLAYERSNAME, "Enemy");
+			theList.add(new PcgCombatant(aPC, "Enemy", messageHandler));
 		}
-		catch (Throwable e)
-		{
-			e.printStackTrace();
-		}
+
+		JOptionPane.showMessageDialog(null,
+			"You will now be returned to PCGen so that you can finalise your selected combatants.\n"
+			+ "Once they are finalised, return to the GMGen Initiative tab to begin the combat!",
+			"Combatant Setup Complete", JOptionPane.INFORMATION_MESSAGE);
+
+		messageHandler.handleMessage(new TransmitInitiativeValuesBetweenComponentsMessage(this, theList));
+		removeAll();
 
 		Globals.setRootFrame(oldRoot);
 	}
@@ -402,7 +395,7 @@ public class EncounterPlugin extends MouseAdapter implements InteractivePlugin, 
 	/**
 	 * Initiliase the menus
 	 */
-	public void initMenus()
+	private void initMenus()
 	{
 		encounterToolsItem.setMnemonic(LanguageBundle.getMnemonic(IN_NAME_MN));
 		encounterToolsItem.setText(getLocalizedName());
@@ -517,7 +510,7 @@ public class EncounterPlugin extends MouseAdapter implements InteractivePlugin, 
 		}
 
 		// Get any currently selected items in the Races list
-		List<Object> selected = new ArrayList<>();
+		Collection<Object> selected = new ArrayList<>();
 
 		for (int index : theView.getLibraryCreatures().getSelectedIndices())
 		{
@@ -532,7 +525,7 @@ public class EncounterPlugin extends MouseAdapter implements InteractivePlugin, 
 		//  IF it is not in the races model then remove it from the encounter model
 		//	TODO: This is only a quick fix to clear the encounter list if the 
 		//	the sources are changed - it will only remove the items when focus is
-		//	returned to this control, 
+		//	returned to this control,
 		for (Object obj : theModel.toArray())
 		{
 			if (!theRaces.contains(obj))
@@ -566,25 +559,17 @@ public class EncounterPlugin extends MouseAdapter implements InteractivePlugin, 
 
 		// re-select the selected creatures only if they still exist in 
 		//	the Races list - may not if sources have been changed
-		List<Integer> stillSelected = new ArrayList<>();
-
-		for (Object obj : selected)
-		{
-			if (theRaces.contains(obj))
-			{
-				stillSelected.add(theRaces.indexOf(obj));
-			}
-		}
+		List<Integer> stillSelected = selected.stream()
+		                                      .filter(obj -> theRaces.contains(obj))
+		                                      .map(obj -> theRaces.indexOf(obj))
+		                                      .collect(Collectors.toList());
 
 		//	convert the ArrayList to an integer array - needed
 		//	to select multiple indices
 		if (!stillSelected.isEmpty())
 		{
 			int[] ints = new int[stillSelected.size()];
-			for (int i = 0; i < ints.length; i++)
-			{
-				ints[i] = (stillSelected.get(i)).intValue();
-			}
+			Arrays.setAll(ints, stillSelected::get);
 
 			theView.getLibraryCreatures().setSelectedIndices(ints);
 		}

@@ -139,7 +139,7 @@ public class ModifyLst extends AbstractNonEmptyToken<VarHolder>
 		{
 			throw new ModifyException(
 				tokenName + " Modifier " + modIdentification + " had value "
-					+ modInstructions + " but it was not valid: " + e.getMessage());
+					+ modInstructions + " but it was not valid: " + e.getMessage(), e);
 		}
 
 		Set<Object> associationsVisited = Collections.newSetFromMap(new CaseInsensitiveMap<>());
@@ -189,11 +189,10 @@ public class ModifyLst extends AbstractNonEmptyToken<VarHolder>
 		List<String> modifiers = new ArrayList<>();
 		for (VarModifier<?> vm : obj.getModifierArray())
 		{
-			StringBuilder sb = new StringBuilder();
-			sb.append(vm.getVarName());
-			sb.append(Constants.PIPE);
-			sb.append(unparseModifier(vm));
-			modifiers.add(sb.toString());
+			String sb = vm.getVarName()
+					+ Constants.PIPE
+					+ unparseModifier(vm);
+			modifiers.add(sb);
 		}
 		if (modifiers.isEmpty())
 		{
@@ -219,7 +218,7 @@ public class ModifyLst extends AbstractNonEmptyToken<VarHolder>
 		sb.append(Constants.PIPE);
 		sb.append(modifier.getInstructions());
 		Collection<String> assocs = modifier.getAssociationInstructions();
-		if (assocs != null && assocs.size() > 0)
+		if (assocs != null && !assocs.isEmpty())
 		{
 			sb.append(Constants.PIPE);
 			sb.append(StringUtil.join(assocs, Constants.PIPE));
@@ -243,7 +242,7 @@ public class ModifyLst extends AbstractNonEmptyToken<VarHolder>
 	 * Exception to indicate something went wrong in the static processing of the 3
 	 * arguments + associations on a modification token.
 	 */
-	public static class ModifyException extends Exception
+	static final class ModifyException extends Exception
 	{
 
 		/**
@@ -252,11 +251,15 @@ public class ModifyLst extends AbstractNonEmptyToken<VarHolder>
 		 * @param message
 		 *            The message indicating the error encountered
 		 */
-		public ModifyException(String message)
+		private ModifyException(String message)
 		{
 			super(message);
 		}
-		
+
+		private ModifyException(String message, Throwable cause)
+		{
+			super(message, cause);
+		}
 	}
 
 }

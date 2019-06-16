@@ -157,19 +157,12 @@ public final class EquipmentModifier extends PObject implements Comparable<Objec
 	 * to? If aType begins with an &#34; (Exclamation Mark) the &#34; will
 	 * be removed before checking the type.
 	 *
-	 * @param aType the type string to check for.
+	 * @param type the type string to check for.
 	 * @return Whether the item is of this type
 	 */
-	public boolean isIType(final String aType)
+	public boolean isIType(Type type)
 	{
-		for (String s : getSafeListFor(ListKey.ITEM_TYPES))
-		{
-			if (aType.equalsIgnoreCase(s))
-			{
-				return true;
-			}
-		}
-		return false;
+		return containsInList(ListKey.ITEM_TYPES, type);
 	}
 
 	/**

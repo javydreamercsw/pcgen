@@ -153,8 +153,7 @@ public class VariableReport
 
 	private List<Campaign> getCampaignsForGameMode(GameMode game)
 	{
-		List<String> gameModeList = new ArrayList<>();
-		gameModeList.addAll(game.getAllowedModes());
+		List<String> gameModeList = new ArrayList<>(game.getAllowedModes());
 
 		// Only add those campaigns in the user's chosen folder and game mode
 		List<Campaign> allCampaigns = Globals.getCampaignList();
@@ -408,17 +407,16 @@ public class VariableReport
 		@Override
 		public String toString()
 		{
-			StringBuilder builder = new StringBuilder(100);
-			builder.append("VarDefine [varName=");
-			builder.append(varName);
-			builder.append(", definingObject=");
-			builder.append(definingObject);
-			builder.append(", definingFile=");
-			builder.append(definingFile);
-			builder.append(", use=");
-			builder.append(use);
-			builder.append(']');
-			return builder.toString();
+			String builder = "VarDefine [varName="
+					+ varName
+					+ ", definingObject="
+					+ definingObject
+					+ ", definingFile="
+					+ definingFile
+					+ ", use="
+					+ use
+					+ ']';
+			return builder;
 		}
 
 		/**

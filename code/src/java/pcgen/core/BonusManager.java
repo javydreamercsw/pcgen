@@ -248,7 +248,7 @@ public class BonusManager
 
 	public String getSpellBonusType(String bonusName, String bonusInfo)
 	{
-		String prefix = new StringBuilder(bonusName).append('.').append(bonusInfo).toString();
+		String prefix = bonusName + '.' + bonusInfo;
 		prefix = prefix.toUpperCase();
 
 		for (String fullyQualifedBonusType : activeBonusMap.keySet())
@@ -360,8 +360,7 @@ public class BonusManager
 
 		//
 		// Now we do all the BonusObj's that require calculations
-		bonusListCopy = new ArrayList<>();
-		bonusListCopy.addAll(getActiveBonusList());
+		bonusListCopy = new ArrayList<>(getActiveBonusList());
 		for (BonusObj bonus : getActiveBonusList())
 		{
 			if (processedBonuses.contains(bonus))

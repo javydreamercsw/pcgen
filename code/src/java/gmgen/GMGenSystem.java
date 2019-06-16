@@ -19,7 +19,6 @@
 package gmgen;
 
 import java.awt.BorderLayout;
-import java.awt.Frame;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,11 +33,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.MenuEvent;
-import javax.swing.event.MenuListener;
 
-import gmgen.gui.PreferencesDialog;
-import gmgen.gui.PreferencesRootTreeNode;
 import gmgen.pluginmgr.messages.AddMenuItemToGMGenToolsMenuMessage;
 import gmgen.pluginmgr.messages.EditMenuCopySelectionMessage;
 import gmgen.pluginmgr.messages.EditMenuCutSelectionMessage;
@@ -50,11 +45,14 @@ import gmgen.pluginmgr.messages.GMGenBeingClosedMessage;
 import gmgen.pluginmgr.messages.RequestAddPreferencesPanelMessage;
 import gmgen.pluginmgr.messages.RequestAddTabToGMGenMessage;
 import gmgen.util.LogUtilities;
+import pcgen.cdom.base.Constants;
 import pcgen.core.SettingsHandler;
 import pcgen.gui2.PCGenActionMap;
-import pcgen.gui2.plaf.MacGUIHandler;
+import pcgen.gui2.dialog.PreferencesDialog;
 import pcgen.gui2.tools.CommonMenuText;
 import pcgen.gui2.tools.Icons;
+import pcgen.gui3.application.DesktopHandler;
+import pcgen.gui3.preferences.GMGenPreferencesModel;
 import pcgen.pluginmgr.PCGenMessage;
 import pcgen.pluginmgr.PCGenMessageHandler;
 import pcgen.pluginmgr.PluginManager;
@@ -72,11 +70,8 @@ import org.apache.commons.lang3.SystemUtils;
  * It holds the controller for every tab as well as the menu bar.
  */
 public final class GMGenSystem extends JFrame
-		implements ChangeListener, MenuListener, ActionListener, PCGenMessageHandler
+		implements ChangeListener, ActionListener, PCGenMessageHandler
 {
-
-	// Serial UID
-	private static final long serialVersionUID = -7372446160499882872L;
 
 	// menu elements used with CommonMenuText.name(...)
 	private static final String MNU_SAVE = "mnuSave"; //$NON-NLS-1$
@@ -87,12 +82,6 @@ public final class GMGenSystem extends JFrame
 	private static final String MNU_COPY = "mnuCopy"; //$NON-NLS-1$
 	private static final String MNU_PASTE = "mnuPaste"; //$NON-NLS-1$
 
-	// Settings keys
-	private static final String SETTING_WINDOW_STATE = "WindowState"; //$NON-NLS-1$
-	private static final String SETTING_WINDOW_HEIGHT = "WindowHeight"; //$NON-NLS-1$
-	private static final String SETTING_WINDOW_WIDTH = "WindowWidth"; //$NON-NLS-1$
-	private static final String WINDOW_Y = "WindowY"; //$NON-NLS-1$
-	private static final String SETTING_WINDOW_X = "WindowX"; //$NON-NLS-1$
 	private static final String SETTING_LOGGING_ON = "Logging.On"; //$NON-NLS-1$
 
 	/**
@@ -120,7 +109,6 @@ public final class GMGenSystem extends JFrame
 	private JMenuItem pasteEditItem;
 	private JMenuItem preferencesEditItem;
 	private JMenuItem exitFileItem;
-	private JMenuItem versionToolsItem;
 
 	/**
 	 * The new menu item in the file menu.
@@ -137,14 +125,8 @@ public final class GMGenSystem extends JFrame
 	 */
 	public JMenuItem saveFileItem;
 
-	// Separators
-	private JSeparator editSeparator1;
-	private JSeparator fileSeparator1;
-	private JSeparator fileSeparator2;
-	private JSeparator toolsSeparator1;
-
 	// Tree for the preferences dialog
-	private final PreferencesRootTreeNode rootNode = new PreferencesRootTreeNode();
+	private final GMGenPreferencesModel rootNode = new GMGenPreferencesModel();
 
 	private final PCGenMessageHandler messageHandler;
 
@@ -166,11 +148,7 @@ public final class GMGenSystem extends JFrame
 
 	private void initialize()
 	{
-		if (SystemUtils.IS_OS_MAC_OSX)
-		{
-			MacGUIHandler.initialize();
-		}
-
+		DesktopHandler.initialize();
 		inst = this;
 		initLogger();
 		createMenuBar();
@@ -178,10 +156,10 @@ public final class GMGenSystem extends JFrame
 		pluginManager.addMember(this);
 		PluginManager.getInstance().startAllPlugins();
 		initComponents();
-		initSettings();
 		messageHandler.handleMessage(new RequestFileOpenedMessageForCurrentlyOpenedPCsMessage(this));
 		messageHandler.handleMessage(new FocusOrStateChangeOccurredMessage(this, editMenu));
 		inst.setVisible(true);
+		pack();
 	}
 
 	/**
@@ -244,7 +222,7 @@ public final class GMGenSystem extends JFrame
 		/*
 		 * Preferences on the Macintosh is in the application menu.
 		 */
-		editMenu.add(editSeparator1);
+		editMenu.add(new JSeparator());
 		CommonMenuText.name(preferencesEditItem, PCGenActionMap.MNU_TOOLS_PREFERENCES);
 		editMenu.add(preferencesEditItem);
 		preferencesEditItem.setEnabled(true);
@@ -255,14 +233,6 @@ public final class GMGenSystem extends JFrame
 			preferencesEditItem.removeActionListener(aListenerArray);
 		}
 		preferencesEditItem.addActionListener(this::mPreferencesActionPerformed);
-	}
-
-	/**
-	 * Exits GMGen, the Mac way.
-	 */
-	public void exitFormMac()
-	{
-		this.setVisible(false);
 	}
 
 	/**
@@ -296,7 +266,6 @@ public final class GMGenSystem extends JFrame
 		}
 		else if (message instanceof GMGenBeingClosedMessage)
 		{
-			setCloseSettings();
 			// Karianna 07/03/2008 - Added a call to exitForm passing in no
 			// window event
 			// TODO This sequence of calls simply hides GMGen as opposed to
@@ -305,62 +274,6 @@ public final class GMGenSystem extends JFrame
 		}
 	}
 
-	/**
-	 * Handles the clicking on the tool menu.
-	 *
-	 */
-	public void handleToolsMenu()
-	{
-		// TODO
-	}
-
-	/**
-	 * launches the preferences dialog on a mac.
-	 */
-	public void mPreferencesActionPerformedMac()
-	{
-		PreferencesDialog dialog = new PreferencesDialog(this, true, rootNode);
-		dialog.setVisible(true);
-	}
-
-	/**
-	 * Handles a menu canceled event.
-	 *
-	 * @param e
-	 *            menu canceled event
-	 */
-	@Override
-	public void menuCanceled(MenuEvent e)
-	{
-		// TODO
-	}
-
-	/**
-	 * Handles a menu de-selected event.
-	 *
-	 * @param e
-	 *            Menu Deselected event
-	 */
-	@Override
-	public void menuDeselected(MenuEvent e)
-	{
-		// TODO
-	}
-
-	/**
-	 * Listens for menus to be clicked and calls the appropriate handlers.
-	 *
-	 * @param e
-	 *            the menu event that happened.
-	 */
-	@Override
-	public void menuSelected(MenuEvent e)
-	{
-		if (e.getSource() == toolsMenu)
-		{
-			handleToolsMenu();
-		}
-	}
 
 	/**
 	 * Calls the necessary methods if an item on the GUI or model has changed.
@@ -385,33 +298,6 @@ public final class GMGenSystem extends JFrame
 		saveFileItem.setEnabled(false);
 		clearEditMenu();
 		messageHandler.handleMessage(new FocusOrStateChangeOccurredMessage(this, editMenu));
-	}
-
-	// Sets a bunch of properties based on the status of GMGen at close.
-	private void setCloseSettings()
-	{
-		SettingsHandler.setGMGenOption(SETTING_WINDOW_X, this.getX());
-		SettingsHandler.setGMGenOption(WINDOW_Y, this.getY());
-		SettingsHandler.setGMGenOption(SETTING_WINDOW_WIDTH, this.getSize().width);
-		SettingsHandler.setGMGenOption(SETTING_WINDOW_HEIGHT, this.getSize().height);
-
-		// Maximized state of the window
-		if ((getExtendedState() & Frame.MAXIMIZED_BOTH) != 0)
-		{
-			SettingsHandler.setGMGenOption(SETTING_WINDOW_STATE, Frame.MAXIMIZED_BOTH);
-		}
-		else if ((getExtendedState() & Frame.MAXIMIZED_HORIZ) != 0)
-		{
-			SettingsHandler.setGMGenOption(SETTING_WINDOW_STATE, Frame.MAXIMIZED_HORIZ);
-		}
-		else if ((getExtendedState() & Frame.MAXIMIZED_VERT) != 0)
-		{
-			SettingsHandler.setGMGenOption(SETTING_WINDOW_STATE, Frame.MAXIMIZED_VERT);
-		}
-		else
-		{
-			SettingsHandler.setGMGenOption(SETTING_WINDOW_STATE, Frame.NORMAL);
-		}
 	}
 
 	// Sets all the panes on the GUI in the correct order.
@@ -450,24 +336,13 @@ public final class GMGenSystem extends JFrame
 		copyEditItem.setEnabled(false);
 		pasteEditItem.setEnabled(false);
 		preferencesEditItem.setEnabled(true);
-		versionToolsItem.setEnabled(false);
 	}
 
 	// Create tools menu
 	private void createToolsMenu()
 	{
 		toolsMenu = new JMenu();
-		toolsSeparator1 = new JSeparator();
-		versionToolsItem = new JMenuItem();
-
 		CommonMenuText.name(toolsMenu, PCGenActionMap.MNU_TOOLS);
-		toolsMenu.addMenuListener(this);
-
-		CommonMenuText.name(versionToolsItem, "mnuGetNew"); //$NON-NLS-1$
-		toolsMenu.add(versionToolsItem);
-
-		toolsMenu.add(toolsSeparator1);
-
 		systemMenuBar.add(toolsMenu);
 	}
 
@@ -478,12 +353,10 @@ public final class GMGenSystem extends JFrame
 		cutEditItem = new JMenuItem();
 		copyEditItem = new JMenuItem();
 		pasteEditItem = new JMenuItem();
-		editSeparator1 = new JSeparator();
 		preferencesEditItem = new JMenuItem();
 
 		// EDIT MENU
 		CommonMenuText.name(editMenu, PCGenActionMap.MNU_EDIT);
-		editMenu.addMenuListener(this);
 
 		CommonMenuText.name(cutEditItem, MNU_CUT);
 		editMenu.add(cutEditItem);
@@ -494,7 +367,7 @@ public final class GMGenSystem extends JFrame
 		CommonMenuText.name(pasteEditItem, MNU_PASTE);
 		editMenu.add(pasteEditItem);
 
-		editMenu.add(editSeparator1);
+		editMenu.add(new JSeparator());
 
 		CommonMenuText.name(preferencesEditItem, PCGenActionMap.MNU_TOOLS_PREFERENCES);
 		editMenu.add(preferencesEditItem);
@@ -517,17 +390,14 @@ public final class GMGenSystem extends JFrame
 		fileMenu = new JMenu();
 		newFileItem = new JMenuItem();
 		openFileItem = new JMenuItem();
-		fileSeparator1 = new JSeparator();
 		saveFileItem = new JMenuItem();
-		fileSeparator2 = new JSeparator();
 		exitFileItem = new JMenuItem();
 
 		CommonMenuText.name(fileMenu, PCGenActionMap.MNU_FILE);
-		fileMenu.addMenuListener(this);
 
 		createFileNewMenuItem();
 		createFileOpenMenuItem();
-		fileMenu.add(fileSeparator1);
+		fileMenu.add(new JSeparator());
 		createFileSaveMenuItem();
 
 		// Exit is quit on the Macintosh is in the application menu.
@@ -562,7 +432,7 @@ public final class GMGenSystem extends JFrame
 
 	private void exitForMacOSX()
 	{
-		fileMenu.add(fileSeparator2);
+		fileMenu.add(new JSeparator());
 		CommonMenuText.name(exitFileItem, MNU_EXIT);
 		fileMenu.add(exitFileItem);
 		exitFileItem.addActionListener(this);
@@ -630,29 +500,9 @@ public final class GMGenSystem extends JFrame
 		LogUtilities.inst().setLogging(logging);
 	}
 
-	// Initializes the settings, and implements their commands.
-	private void initSettings()
-	{
-		int iWinX = SettingsHandler.getGMGenOption(SETTING_WINDOW_X, 0);
-		int iWinY = SettingsHandler.getGMGenOption(WINDOW_Y, 0);
-		setLocation(iWinX, iWinY);
-
-		int iWinWidth = SettingsHandler.getGMGenOption(SETTING_WINDOW_WIDTH, 750);
-		int iWinHeight = SettingsHandler.getGMGenOption(SETTING_WINDOW_HEIGHT, 580);
-		setSize(iWinWidth, iWinHeight);
-
-		int windowState = SettingsHandler.getGMGenOption(SETTING_WINDOW_STATE, Frame.NORMAL);
-
-		if (windowState != Frame.NORMAL)
-		{
-			setExtendedState(windowState);
-		}
-
-	}
-
 	private void mPreferencesActionPerformed(ActionEvent event)
 	{
-		Window dialog = new PreferencesDialog(this, true, rootNode);
+		Window dialog = new PreferencesDialog(this, rootNode, Constants.SYSTEM_GMGEN);
 		dialog.setVisible(true);
 	}
 

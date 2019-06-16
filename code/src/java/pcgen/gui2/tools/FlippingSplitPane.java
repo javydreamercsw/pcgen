@@ -33,10 +33,8 @@ import javax.swing.JSplitPane;
 import javax.swing.plaf.SplitPaneUI;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 
-import pcgen.gui2.UIPropertyContext;
 import pcgen.gui2.util.event.PopupMouseAdapter;
 import pcgen.system.LanguageBundle;
-import pcgen.system.PropertyContext;
 
 /**
  * {@code FlippingSplitPane} is an improved version of
@@ -72,35 +70,26 @@ import pcgen.system.PropertyContext;
  */
 public class FlippingSplitPane extends JSplitPane
 {
-	/** Preferences key for storing the preferred divider location. */
-	private static final String DIVIDER_LOC_PREF_KEY = "location"; //$NON-NLS-1$
-
-	private static final long serialVersionUID = 735390251967305647L;
-
 	private final LockAction lockAction = new LockAction();
-	private JPopupMenu popupMenu = null;
-	private PropertyContext baseContext;
-	private final String prefsKey;
+	private JPopupMenu popupMenu;
 
 	/**
 	 * Creates a new {@code FlippingSplitPane}.  Panes begin as unlocked
 	 */
-	public FlippingSplitPane(String prefsKey)
+	public FlippingSplitPane()
 	{
-		this.prefsKey = prefsKey;
-		initComponent();
+		setupExtensions();
 	}
 
 	/**
 	 * Creates a new {@code FlippingSplitPane}.  Panes begin as unlocked, and
 	 * otherwise take the defaults of {@link JSplitPane#JSplitPane(int)}.
 	 */
-	public FlippingSplitPane(int newOrientation, String prefsKey)
+	public FlippingSplitPane(int newOrientation)
 	{
 		super(newOrientation);
 
-		this.prefsKey = prefsKey;
-		initComponent();
+		setupExtensions();
 	}
 
 	/**
@@ -108,13 +97,11 @@ public class FlippingSplitPane extends JSplitPane
 	 * otherwise take the defaults of {@link JSplitPane#JSplitPane(int, Component,
 	 * Component)}.
 	 */
-	public FlippingSplitPane(int newOrientation, Component newLeftComponent, Component newRightComponent,
-		String prefsKey)
+	public FlippingSplitPane(int newOrientation, Component newLeftComponent, Component newRightComponent)
 	{
 		super(newOrientation, newLeftComponent, newRightComponent);
 
-		this.prefsKey = prefsKey;
-		initComponent();
+		setupExtensions();
 	}
 
 	/**
@@ -123,12 +110,11 @@ public class FlippingSplitPane extends JSplitPane
 	 * Component, Component)}.
 	 */
 	public FlippingSplitPane(int newOrientation, boolean newContinuousLayout, Component newLeftComponent,
-		Component newRightComponent, String prefsKey)
+	                         Component newRightComponent)
 	{
 		super(newOrientation, newContinuousLayout, newLeftComponent, newRightComponent);
 
-		this.prefsKey = prefsKey;
-		initComponent();
+		setupExtensions();
 	}
 
 	/**
@@ -151,16 +137,6 @@ public class FlippingSplitPane extends JSplitPane
 		maybeSetContinuousLayoutComponent(getRightComponent(), newContinuousLayout);
 	}
 
-	private void setInitialDividerLocation()
-	{
-		PropertyContext context = baseContext.createChildContext(prefsKey);
-		int location = context.getInt(DIVIDER_LOC_PREF_KEY, -1);
-		if (location >= 0)
-		{
-			setDividerLocation(location);
-		}
-	}
-
 	/**
 	 * {@code setDividerLocation} calls {@link JSplitPane#setDividerLocation(int)}
 	 * unless the {@code FlippingSplitPane} is locked.
@@ -170,8 +146,6 @@ public class FlippingSplitPane extends JSplitPane
 	@Override
 	public void setDividerLocation(int location)
 	{
-		PropertyContext context = baseContext.createChildContext(prefsKey);
-		context.setInt(DIVIDER_LOC_PREF_KEY, location);
 		if (isLocked())
 		{
 			super.setDividerLocation(getLastDividerLocation());
@@ -189,6 +163,7 @@ public class FlippingSplitPane extends JSplitPane
 		{
 			return;
 		}
+
 		super.setDividerSize(newSize);
 		maybeSetDividerSizeComponent(getLeftComponent(), newSize);
 		maybeSetDividerSizeComponent(getRightComponent(), newSize);
@@ -241,8 +216,7 @@ public class FlippingSplitPane extends JSplitPane
 	}
 
 	/**
-	 * {@code resetToPreferredSizes} recursively calls {@link
-	 * JSplitPane#resetToPreferredSizes} on {@code FlippingSplitPane}
+	 * {@code resetToPreferredSizes} recursively calls  on {@code FlippingSplitPane}
 	 * components.
 	 */
 	@Override
@@ -440,10 +414,10 @@ public class FlippingSplitPane extends JSplitPane
 	}
 
 	/**
-	 * {@code initComponent} installs the mouse listener for the popup menu,
+	 * {@code setupExtensions} installs the mouse listener for the popup menu,
 	 * and fixes some egregious defaults in {@code JSplitPane}.
 	 */
-	private void initComponent()
+	private void setupExtensions()
 	{
 		SplitPaneUI anUi = getUI();
 
@@ -452,11 +426,9 @@ public class FlippingSplitPane extends JSplitPane
 			((BasicSplitPaneUI) anUi).getDivider().addMouseListener(new PopupListener());
 		}
 		setResizeWeight(0.5);
-		baseContext = UIPropertyContext.createContext("dividerPrefs");
-		setInitialDividerLocation();
 	}
 
-	private class LockAction extends AbstractAction
+	private final class LockAction extends AbstractAction
 	{
 
 		/**
@@ -471,7 +443,6 @@ public class FlippingSplitPane extends JSplitPane
 
 		public LockAction()
 		{
-			putValue(SMALL_ICON, Icons.Bookmarks16.getImageIcon());
 			configureProps();
 		}
 
@@ -545,7 +516,6 @@ public class FlippingSplitPane extends JSplitPane
 		{
 			super(LanguageBundle.getString("in_center"));
 			setMnemonic(LanguageBundle.getMnemonic("in_mn_center"));
-			setIcon(Icons.MediaStop16.getImageIcon());
 
 			addActionListener(this);
 		}
@@ -564,7 +534,7 @@ public class FlippingSplitPane extends JSplitPane
 	/**
 	 * Menu item for Continuous layout item in options menu.
 	 */
-	private class ContinuousLayoutMenuItem extends JCheckBoxMenuItem implements ActionListener
+	private final class ContinuousLayoutMenuItem extends JCheckBoxMenuItem implements ActionListener
 	{
 
 		ContinuousLayoutMenuItem()
@@ -598,7 +568,6 @@ public class FlippingSplitPane extends JSplitPane
 			super(LanguageBundle.getString("in_flip"));
 
 			setMnemonic(LanguageBundle.getMnemonic("in_mn_flip"));
-			setIcon(Icons.Refresh16.getImageIcon());
 
 			addActionListener(this);
 		}
@@ -617,7 +586,7 @@ public class FlippingSplitPane extends JSplitPane
 	/**
 	 * Menu item for One touch expandable item in options menu.
 	 */
-	private class OneTouchExpandableMenuItem extends JCheckBoxMenuItem implements ActionListener
+	private final class OneTouchExpandableMenuItem extends JCheckBoxMenuItem implements ActionListener
 	{
 
 		OneTouchExpandableMenuItem()
@@ -643,7 +612,7 @@ public class FlippingSplitPane extends JSplitPane
 	/**
 	 * Menu for Options item in popup menu.
 	 */
-	private class OptionsMenu extends JMenu
+	private final class OptionsMenu extends JMenu
 	{
 
 		OptionsMenu()
@@ -670,7 +639,7 @@ public class FlippingSplitPane extends JSplitPane
 			{
 				showPopup(e);
 			}
-			else if (Utilities.isShiftLeftMouseButton(e))
+			else if (Utility.isShiftLeftMouseButton(e))
 			{
 				if (!isLocked())
 				{
@@ -711,14 +680,13 @@ public class FlippingSplitPane extends JSplitPane
 	/**
 	 * Menu item for Reset item in popup menu.
 	 */
-	private class ResetMenuItem extends JMenuItem implements ActionListener
+	private final class ResetMenuItem extends JMenuItem implements ActionListener
 	{
 
 		ResetMenuItem()
 		{
 			super(LanguageBundle.getString("in_reset"));
 			setMnemonic(LanguageBundle.getMnemonic("in_mn_reset"));
-			setIcon(Icons.Redo16.getImageIcon());
 
 			addActionListener(this);
 		}

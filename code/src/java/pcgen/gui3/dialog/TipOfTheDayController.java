@@ -20,10 +20,10 @@ package pcgen.gui3.dialog;
 
 import pcgen.gui2.UIPropertyContext;
 import pcgen.gui2.tools.TipOfTheDayHandler;
+import pcgen.gui3.GuiAssertions;
 import pcgen.system.LanguageBundle;
 import pcgen.system.PropertyContext;
 
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -101,10 +101,8 @@ public class TipOfTheDayController
 
 	private void showTip(final String tip)
 	{
-		Platform.runLater(() -> {
-			browser.getEngine().loadContent(buildTipText(tip));
-		});
-
+		GuiAssertions.assertIsJavaFXThread();
+		browser.getEngine().loadContent(buildTipText(tip));
 	}
 
 	private String buildTipText(String tip)

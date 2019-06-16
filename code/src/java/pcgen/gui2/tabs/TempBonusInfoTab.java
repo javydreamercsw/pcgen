@@ -62,6 +62,7 @@ import pcgen.gui2.util.treeview.DefaultDataViewColumn;
 import pcgen.gui2.util.treeview.TreeView;
 import pcgen.gui2.util.treeview.TreeViewModel;
 import pcgen.gui2.util.treeview.TreeViewPath;
+import pcgen.gui3.utilty.ColorUtilty;
 import pcgen.system.LanguageBundle;
 import pcgen.util.enumeration.Tab;
 
@@ -90,7 +91,6 @@ public class TempBonusInfoTab extends FlippingSplitPane implements CharacterInfo
 	 */
 	public TempBonusInfoTab()
 	{
-		super("TempBonus");
 		this.availableTable = new FilteredTreeViewTable<>();
 		this.selectedTable = new FilteredTreeViewTable<>();
 		this.addButton = new JButton();
@@ -102,7 +102,7 @@ public class TempBonusInfoTab extends FlippingSplitPane implements CharacterInfo
 
 	private void initComponents()
 	{
-		FlippingSplitPane topPane = new FlippingSplitPane("TempBonusTop");
+		FlippingSplitPane topPane = new FlippingSplitPane();
 		setTopComponent(topPane);
 		setOrientation(VERTICAL_SPLIT);
 
@@ -202,7 +202,7 @@ public class TempBonusInfoTab extends FlippingSplitPane implements CharacterInfo
 			super.getTreeCellRendererComponent(tree, obj, sel, expanded, leaf, row, focus);
 			if (value instanceof TempBonusFacade && !character.isQualifiedFor((TempBonusFacade) value))
 			{
-				setForeground(UIPropertyContext.getNotQualifiedColor());
+				setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor()));
 			}
 			if (value instanceof InfoFacade && ((InfoFacade) value).isNamePI())
 			{
@@ -388,7 +388,7 @@ public class TempBonusInfoTab extends FlippingSplitPane implements CharacterInfo
 	{
 
 		private static final ListFacade<? extends TreeView<TempBonusFacade>> TREE_VIEWS =
-				new DefaultListFacade<TreeView<TempBonusFacade>>(Arrays.asList(TempBonusTreeView.values()));
+				new DefaultListFacade<>(Arrays.asList(TempBonusTreeView.values()));
 		private final List<DefaultDataViewColumn> columns;
 		private final CharacterFacade character;
 		private final InfoFactory infoFactory;

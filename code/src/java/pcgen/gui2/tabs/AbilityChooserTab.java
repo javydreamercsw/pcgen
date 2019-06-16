@@ -75,6 +75,7 @@ import pcgen.gui2.util.treeview.DataViewColumn;
 import pcgen.gui2.util.treeview.DefaultDataViewColumn;
 import pcgen.gui2.util.treeview.TreeView;
 import pcgen.gui2.util.treeview.TreeViewModel;
+import pcgen.gui3.utilty.ColorUtilty;
 import pcgen.system.LanguageBundle;
 
 /**
@@ -103,7 +104,6 @@ public class AbilityChooserTab extends FlippingSplitPane implements StateEditabl
 
 	public AbilityChooserTab()
 	{
-		super("ability");
 		this.availableTreeViewPanel = new FilteredTreeViewTable<>();
 		this.selectedTreeViewPanel = new JTreeTable();
 		this.categoryTable = new JTable();
@@ -147,7 +147,7 @@ public class AbilityChooserTab extends FlippingSplitPane implements StateEditabl
 		box.setBorder(new EmptyBorder(0, 0, 5, 0));
 		selPanel.add(box, BorderLayout.SOUTH);
 		FlippingSplitPane topPane =
-				new FlippingSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, availPanel, selPanel, "abilityTop");
+				new FlippingSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, availPanel, selPanel);
 
 		setTopComponent(topPane);
 
@@ -155,7 +155,7 @@ public class AbilityChooserTab extends FlippingSplitPane implements StateEditabl
 				new FilterButton<>("AbilityGained", true);
 		gainedFilterButton.setText(LanguageBundle.getString("in_gained")); //$NON-NLS-1$
 		gainedFilterButton.setEnabled(true);
-		gainedFilterButton.setFilter(new Filter<CharacterFacade, AbilityCategory>()
+		gainedFilterButton.setFilter(new Filter<>()
 		{
 			@Override
 			public boolean accept(CharacterFacade context, AbilityCategory element)
@@ -170,7 +170,7 @@ public class AbilityChooserTab extends FlippingSplitPane implements StateEditabl
 		filterPanel.add(categoryBar, BorderLayout.NORTH);
 		filterPanel.add(new JScrollPane(categoryTable), BorderLayout.CENTER);
 
-		FlippingSplitPane bottomPane = new FlippingSplitPane(JSplitPane.HORIZONTAL_SPLIT, "abilityBottom");
+		FlippingSplitPane bottomPane = new FlippingSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		bottomPane.setLeftComponent(filterPanel);
 		bottomPane.setRightComponent(infoPane);
 		setBottomComponent(bottomPane);
@@ -683,7 +683,7 @@ public class AbilityChooserTab extends FlippingSplitPane implements StateEditabl
 	private class AbilityFilterHandler
 	{
 
-		private final Filter<CharacterFacade, AbilityFacade> qFilter = new Filter<CharacterFacade, AbilityFacade>()
+		private final Filter<CharacterFacade, AbilityFacade> qFilter = new Filter<>()
 		{
 			@Override
 			public boolean accept(CharacterFacade context, AbilityFacade element)
@@ -785,15 +785,15 @@ public class AbilityChooserTab extends FlippingSplitPane implements StateEditabl
 				Nature nature = character.getAbilityNature(ability);
 				if (nature == Nature.VIRTUAL)
 				{
-					setForeground(UIPropertyContext.getVirtualColor());
+					setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getVirtualColor()));
 				}
 				else if (!character.isQualifiedFor(ability))
 				{
-					setForeground(UIPropertyContext.getNotQualifiedColor());
+					setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor()));
 				}
 				else if (nature == Nature.AUTOMATIC)
 				{
-					setForeground(UIPropertyContext.getAutomaticColor());
+					setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getAutomaticColor()));
 				}
 			}
 			return this;

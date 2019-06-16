@@ -331,8 +331,7 @@ public final class Kit extends PObject
 			info.append("  <b>Requirements</b>: ").append(aString);
 		}
 
-		List<BaseKit> sortedObjects = new ArrayList<>();
-		sortedObjects.addAll(getSafeListFor(ListKey.KIT_TASKS));
+		List<BaseKit> sortedObjects = new ArrayList<>(getSafeListFor(ListKey.KIT_TASKS));
 		sortedObjects.sort(Comparator.comparing(BaseKit::getObjectName));
 
 		String lastObjectName = "";
@@ -363,10 +362,9 @@ public final class Kit extends PObject
 
 	private String getPreReqHTMLStrings(PlayerCharacter aPC)
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append(PrerequisiteUtilities.preReqHTMLStringsForList(aPC, this, getPrerequisiteList(), false));
-		sb.append(AllowUtilities.getAllowInfo(aPC, this));
-		return sb.toString();
+		String sb = PrerequisiteUtilities.preReqHTMLStringsForList(aPC, this, getPrerequisiteList(), false)
+				+ AllowUtilities.getAllowInfo(aPC, this);
+		return sb;
 	}
 
 	public static void applyKit(final Kit aKit, final PlayerCharacter aPC)

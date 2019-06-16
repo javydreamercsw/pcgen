@@ -74,9 +74,9 @@ import pcgen.gui2.tabs.models.CharacterTreeCellRenderer.Handler;
 import pcgen.gui2.tabs.models.QualifiedTreeCellRenderer;
 import pcgen.gui2.tools.FlippingSplitPane;
 import pcgen.gui2.tools.InfoPane;
-import pcgen.gui2.tools.PrefTableColumnModel;
 import pcgen.gui2.util.FontManipulation;
 import pcgen.gui2.util.JDynamicTable;
+import pcgen.gui2.util.table.DefaultDynamicTableColumnModel;
 import pcgen.gui2.util.table.DynamicTableColumnModel;
 import pcgen.gui2.util.table.TableUtils;
 import pcgen.gui2.util.treeview.DataView;
@@ -85,6 +85,7 @@ import pcgen.gui2.util.treeview.DefaultDataViewColumn;
 import pcgen.gui2.util.treeview.TreeView;
 import pcgen.gui2.util.treeview.TreeViewModel;
 import pcgen.gui2.util.treeview.TreeViewPath;
+import pcgen.gui3.utilty.ColorUtilty;
 import pcgen.system.LanguageBundle;
 import pcgen.util.enumeration.Tab;
 
@@ -110,7 +111,7 @@ public class DomainInfoTab extends FlippingSplitPane implements CharacterInfoTab
 
 	public DomainInfoTab()
 	{
-		super("Domain");
+		super();
 		this.deityTable = new FilteredTreeViewTable<>();
 		this.domainTable = new JDynamicTable();
 		this.domainRowHeaderTable = TableUtils.createDefaultTable();
@@ -152,7 +153,7 @@ public class DomainInfoTab extends FlippingSplitPane implements CharacterInfoTab
 		box.add(Box.createHorizontalGlue());
 		panel.add(box, BorderLayout.SOUTH);
 
-		FlippingSplitPane splitPane = new FlippingSplitPane("DomainTop");
+		FlippingSplitPane splitPane = new FlippingSplitPane();
 		splitPane.setLeftComponent(panel);
 
 		panel = new JPanel(new BorderLayout());
@@ -182,7 +183,7 @@ public class DomainInfoTab extends FlippingSplitPane implements CharacterInfoTab
 
 		splitPane.setRightComponent(panel);
 		setTopComponent(splitPane);
-		splitPane = new FlippingSplitPane("DomainBottom");
+		splitPane = new FlippingSplitPane();
 		splitPane.setLeftComponent(deityInfo);
 		splitPane.setRightComponent(domainInfo);
 		setBottomComponent(splitPane);
@@ -191,16 +192,20 @@ public class DomainInfoTab extends FlippingSplitPane implements CharacterInfoTab
 
 	public DynamicTableColumnModel createDomainColumnModel()
 	{
-		PrefTableColumnModel model = new PrefTableColumnModel("DomainList", 1);
+		DefaultDynamicTableColumnModel model = new DefaultDynamicTableColumnModel(1);
 		TableColumn column = new TableColumn(0);
 		column.setHeaderValue(LanguageBundle.getString("in_domains")); //$NON-NLS-1$
-		model.addColumn(column, true, 150);
+		column.setPreferredWidth(150);
+		model.addColumn(column);
+		model.setVisible(column, true);
 		column = new TableColumn(1);
 		column.setHeaderValue(LanguageBundle.getString("in_descrip")); //$NON-NLS-1$
-		model.addColumn(column, false, 150);
+		column.setPreferredWidth(150);
+		model.setVisible(column, false);
 		column = new TableColumn(2);
 		column.setHeaderValue(LanguageBundle.getString("in_source")); //$NON-NLS-1$
-		model.addColumn(column, true, 150);
+		column.setPreferredWidth(150);
+		model.setVisible(column, false);
 		return model;
 	}
 
@@ -296,11 +301,11 @@ public class DomainInfoTab extends FlippingSplitPane implements CharacterInfoTab
 			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			if (value instanceof DomainFacade && !character.isQualifiedFor((DomainFacade) value))
 			{
-				setForeground(UIPropertyContext.getNotQualifiedColor());
+				setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getNotQualifiedColor()));
 			}
 			else if (!isSelected)
 			{
-				setForeground(UIPropertyContext.getQualifiedColor());
+				setForeground(ColorUtilty.colorToAWTColor(UIPropertyContext.getQualifiedColor()));
 			}
 			if (value instanceof InfoFacade && ((InfoFacade) value).isNamePI())
 			{
@@ -447,7 +452,7 @@ public class DomainInfoTab extends FlippingSplitPane implements CharacterInfoTab
 	private class QualifiedFilterHandler
 	{
 
-		private final Filter<Object, DomainFacade> domainFilter = new Filter<Object, DomainFacade>()
+		private final Filter<Object, DomainFacade> domainFilter = new Filter<>()
 		{
 			@Override
 			public boolean accept(Object context, DomainFacade element)
@@ -456,7 +461,7 @@ public class DomainInfoTab extends FlippingSplitPane implements CharacterInfoTab
 			}
 
 		};
-		private final Filter<Object, Deity> deityFilter = new Filter<Object, Deity>()
+		private final Filter<Object, Deity> deityFilter = new Filter<>()
 		{
 			@Override
 			public boolean accept(Object context, Deity element)
@@ -602,7 +607,7 @@ public class DomainInfoTab extends FlippingSplitPane implements CharacterInfoTab
 	private static class DomainTableModel extends FilteredListFacadeTableModel<DomainFacade>
 	{
 
-		private final ListListener<DomainFacade> listListener = new ListListener<DomainFacade>()
+		private final ListListener<DomainFacade> listListener = new ListListener<>()
 		{
 			@Override
 			public void elementAdded(ListEvent<DomainFacade> e)

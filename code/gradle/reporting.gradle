@@ -13,8 +13,7 @@ buildScan {
 checkstyle {
 	configFile = new File('code/standards/checkstyle.xml')
 	configProperties = [samedir: "${rootDir}/code/standards"]
-	ignoreFailures = true
-	showViolations = false
+	showViolations = true
 	toolVersion = '8.20'
 	sourceSets = []
 }
@@ -25,7 +24,7 @@ pmd {
 	ruleSetFiles = files('code/standards/ruleset.xml')
 	consoleOutput = true
 	sourceSets = []
-	toolVersion = "6.10.0"
+	toolVersion = "6.14.0"
 }
 
 spotbugs {
